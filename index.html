@@ -432,8 +432,8 @@ button { cursor: pointer; }
       <button type="button" class="navis-g" data-g="5" title="5× 極快">5×</button>
     </div>
   </div>
-  <div id="wallClipBar" class="wall-clip-bar panel" hidden aria-label="穿牆開關">
-    <button type="button" id="bWallClip" class="wall-clip-btn" aria-pressed="false" title="開關穿牆（預設關閉＝撞牆實心）">穿牆 OFF</button>
+  <div id="wallClipBar" class="wall-clip-bar panel" hidden aria-label="擋牆／穿牆">
+    <button type="button" id="bWallClip" class="wall-clip-btn" aria-pressed="false" title="擋牆（有碰撞／預設）">擋牆</button>
   </div>
 
   <div id="walkSpotBar" class="walk-spot-bar panel" hidden aria-label="樓層視角捷徑">
@@ -7242,7 +7242,7 @@ const CAPSULE_BVH = (() => {
     try { window.__bimWallClipOn = bimWallClipOn; } catch (e) { }
     syncWallClipBar();
     if (!opts.silent) {
-      toast(bimWallClipOn ? '穿牆 ON' : '穿牆 OFF', bimWallClipOn ? '可穿過牆壁（本次步行）' : '牆壁實心（預設）');
+      toast(bimWallClipOn ? '穿牆' : '擋牆', bimWallClipOn ? '無碰撞：可穿過牆壁（本次步行）' : '有碰撞：牆壁實心（預設）');
     }
     return bimWallClipOn;
   }
@@ -7255,10 +7255,10 @@ const CAPSULE_BVH = (() => {
     if (btn) {
       btn.classList.toggle('on', !!bimWallClipOn);
       btn.setAttribute('aria-pressed', bimWallClipOn ? 'true' : 'false');
-      btn.textContent = bimWallClipOn ? '穿牆 ON' : '穿牆 OFF';
-      btn.title = bimWallClipOn ? '穿牆中：再按恢復撞牆' : '開關穿牆（預設關閉＝撞牆實心）';
+      btn.textContent = bimWallClipOn ? '穿牆' : '擋牆';
+      btn.title = bimWallClipOn ? '穿牆（無碰撞）：再按恢復擋牆' : '擋牆（有碰撞／預設）';
     }
-    bar.setAttribute('aria-label', bimWallClipOn ? '穿牆 ON' : '穿牆 OFF');
+    bar.setAttribute('aria-label', bimWallClipOn ? '穿牆' : '擋牆');
   }
   function bindWallClipBar() {
     const bar = $('wallClipBar');
