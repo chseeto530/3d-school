@@ -166,12 +166,14 @@ button { cursor: pointer; }
 #touch { position: absolute; inset: 0; pointer-events: none; }
 #stick { position: absolute; width: 112px; height: 112px; margin: -56px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .5); background: rgba(16, 25, 35, .25); display: none; }
 #stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px; border-radius: 50%; background: rgba(255, 255, 255, .85); }
-.navis-speed-bar { position: absolute; left: 16px; top: calc(var(--top-bottom, 72px) + 52px); z-index: 14; width: 210px; padding: 10px 12px 12px; pointer-events: auto; touch-action: manipulation; }
+.navis-speed-bar { position: absolute; left: 16px; top: calc(var(--top-bottom, 72px) + 56px); z-index: 40; width: 220px; padding: 10px 12px 12px; pointer-events: auto !important; touch-action: manipulation; }
 .navis-speed-bar[hidden] { display: none !important; }
-.navis-speed-title { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; letter-spacing: .04em; }
-.navis-speed-btns { display: flex; flex-wrap: wrap; gap: 6px; }
-.navis-speed-btns button { flex: 1 1 calc(33% - 6px); min-width: 52px; height: 34px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .07); color: #e8eef5; font-size: 12px; font-weight: 700; cursor: pointer; }
-.navis-speed-btns button.on { background: #3d8bfd; border-color: #6aa8ff; color: #fff; }
+.navis-speed-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; margin-bottom: 8px; letter-spacing: .04em; }
+.navis-speed-title #navisGearLabel { color: #6aa8ff; font-variant-numeric: tabular-nums; }
+.navis-speed-btns { display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto; }
+.navis-speed-btns button { flex: 1 1 calc(33% - 6px); min-width: 52px; height: 36px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .07); color: #e8eef5; font-size: 12px; font-weight: 700; cursor: pointer; pointer-events: auto; position: relative; z-index: 1; }
+.navis-speed-btns button:hover { background: rgba(255, 255, 255, .14); }
+.navis-speed-btns button.on { background: #3d8bfd; border-color: #6aa8ff; color: #fff; box-shadow: 0 0 0 1px rgba(106, 168, 255, .45); }
 #bimWalkPad { position: absolute; right: 18px; bottom: 72px; z-index: 12; display: flex; flex-direction: column; align-items: center; gap: 6px; touch-action: none; user-select: none; pointer-events: auto; }
 #bimWalkPad[hidden] { display: none !important; }
 #bimWalkPad .row { display: flex; gap: 6px; }
@@ -415,13 +417,13 @@ button { cursor: pointer; }
     <button data-f="9" class="on">全部</button><button data-f="5">5F</button><button data-f="4">4F</button><button data-f="3">3F</button><button data-f="2">2F</button><button data-f="1">1F</button><button data-f="0">GF</button>
   </div>
   <div id="navisSpeedBar" class="navis-speed-bar panel" hidden aria-label="漫遊速度">
-    <span class="navis-speed-title">漫遊速度</span>
+    <span class="navis-speed-title">漫遊速度 <b id="navisGearLabel">3×</b></span>
     <div class="navis-speed-btns">
-      <button type="button" class="navis-g" data-g="1" title="極慢">1x</button>
-      <button type="button" class="navis-g" data-g="2" title="慢">2x</button>
-      <button type="button" class="navis-g on" data-g="3" title="正常">3x</button>
-      <button type="button" class="navis-g" data-g="4" title="快">4x</button>
-      <button type="button" class="navis-g" data-g="5" title="極快">5x</button>
+      <button type="button" class="navis-g" data-g="1" title="1× 極慢">1×</button>
+      <button type="button" class="navis-g" data-g="2" title="2× 慢">2×</button>
+      <button type="button" class="navis-g on" data-g="3" title="3× 正常">3×</button>
+      <button type="button" class="navis-g" data-g="4" title="4× 快">4×</button>
+      <button type="button" class="navis-g" data-g="5" title="5× 極快">5×</button>
     </div>
   </div>
 
@@ -6275,7 +6277,8 @@ const KIT_BIM = (() => {
  * 第三人稱步行：相機朝向移動、平滑轉身／鏡頭（供 campus-3d-v2 BIM 步行）。 */
 const THIRD_PERSON_WALK = (() => {
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const NAVIS_GEAR_MUL = { 1: 0.45, 2: 0.72, 3: 1.05, 4: 1.55, 5: 2.4 };
+  // Literal walk speed multipliers (UI 1x–5x). Soft curve made gear clicks feel like no-ops.
+  const NAVIS_GEAR_MUL = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 };
 
   function expK(dt, rate) {
     return 1 - Math.exp(-Math.max(0, dt || 0) * rate);
@@ -7106,27 +7109,65 @@ const CAPSULE_BVH = (() => {
     const g = +localStorage.getItem(NAVIS_GEAR_KEY);
     if (g >= 1 && g <= 5) navisSpeedGear = g;
   } catch (e) { }
+  const NAVIS_GEAR_LABELS = ['', '極慢', '慢', '正常', '快', '極快'];
+  function setNavisSpeedGear(g, opts) {
+    opts = opts || {};
+    const next = clamp(+g || 3, 1, 5);
+    const prev = navisSpeedGear;
+    if (next === prev && !opts.force) {
+      syncNavisSpeedBar();
+      return navisSpeedGear;
+    }
+    const ratio = (prev > 0 ? next / prev : 1);
+    navisSpeedGear = next;
+    try { localStorage.setItem(NAVIS_GEAR_KEY, String(navisSpeedGear)); } catch (e) { }
+    // Instantly rescale current Navis velocity so the new gear is felt on the next frame.
+    if (P && Number.isFinite(ratio) && ratio > 0 && (P.navVx || P.navVz)) {
+      P.navVx *= ratio;
+      P.navVz *= ratio;
+    }
+    syncNavisSpeedBar();
+    if (!opts.silent) {
+      toast('漫遊速度', navisSpeedGear + '×（' + NAVIS_GEAR_LABELS[navisSpeedGear] + '）');
+    }
+    try { window.__navisSpeedGear = navisSpeedGear; } catch (e) { }
+    return navisSpeedGear;
+  }
   function syncNavisSpeedBar() {
     const bar = $('navisSpeedBar');
     if (!bar) return;
     const show = mode === 'walk' && window.__kitScene && window.__kitScene.enabled && window.__bimLoaded && bimWalkNavisMove();
     bar.hidden = !show;
-    if (show) bar.querySelectorAll('.navis-g').forEach(b => b.classList.toggle('on', +b.dataset.g === navisSpeedGear));
+    const lab = $('navisGearLabel');
+    if (lab) lab.textContent = navisSpeedGear + '×';
+    bar.setAttribute('aria-label', '漫遊速度 ' + navisSpeedGear + '×');
+    bar.querySelectorAll('.navis-g').forEach(b => {
+      const on = +b.dataset.g === navisSpeedGear;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    try { window.__navisSpeedGear = navisSpeedGear; } catch (e) { }
   }
   function bindNavisSpeedBar() {
     const bar = $('navisSpeedBar');
     if (!bar || bar._bound) return;
     bar._bound = true;
-    bar.querySelectorAll('.navis-g').forEach(btn => {
-      btn.addEventListener('click', () => {
-        navisSpeedGear = clamp(+btn.dataset.g, 1, 5);
-        try { localStorage.setItem(NAVIS_GEAR_KEY, String(navisSpeedGear)); } catch (e) { }
-        syncNavisSpeedBar();
-        toast('漫遊速度', navisSpeedGear + 'x（' + ['', '極慢', '慢', '正常', '快', '極快'][navisSpeedGear] + '）');
-      });
-    });
+    const onPick = (e) => {
+      const btn = e.target && e.target.closest && e.target.closest('.navis-g');
+      if (!btn || !bar.contains(btn)) return;
+      // Capture + stop so canvas / pointer-lock paths cannot swallow the gear change.
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof uiReleasePointer === 'function') uiReleasePointer();
+      else if (document.pointerLockElement) document.exitPointerLock();
+      setNavisSpeedGear(+btn.dataset.g);
+    };
+    // pointerdown (capture) survives pointer-lock exit; click as fallback for keyboard activation.
+    bar.addEventListener('pointerdown', onPick, true);
+    bar.addEventListener('click', onPick, true);
   }
   bindNavisSpeedBar();
+  try { window.__navisSpeedGear = navisSpeedGear; } catch (e) { }
   function syncWalkOrbitFromPlayer() {
     orbitYaw = P.yaw;
     orbitPitch = clamp(P.pitch, -1.45, 1.45);
@@ -8383,6 +8424,11 @@ const CAPSULE_BVH = (() => {
     if (mode === 'walk' && kitFlyEnabled()) {
       if (e.code === 'KeyT') { K.flyUp = true; e.preventDefault(); return; }
       if (e.code === 'KeyG') { K.flyDn = true; e.preventDefault(); return; }
+    }
+    if (mode === 'walk' && e.code && /^Digit[1-5]$/.test(e.code) && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      setNavisSpeedGear(+e.code.slice(-1));
+      return;
     }
     if (e.code === 'KeyV' && mode === 'walk') setThird(!third);
     else if (e.code === 'KeyC' && mode === 'walk') toggleRole();
@@ -10071,7 +10117,7 @@ const CAPSULE_BVH = (() => {
   document.addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b || $('editor').contains(b) || $('moveTools').contains(b)) return;
-    if (mode === 'walk' && (b.closest('#top') || b.closest('#navbar') || b.closest('#tbtns') || b.closest('#start'))) uiReleasePointer();
+    if (mode === 'walk' && (b.closest('#top') || b.closest('#navbar') || b.closest('#tbtns') || b.closest('#start') || b.closest('#navisSpeedBar') || b.closest('#walkSpotBar') || b.closest('#bimWalkPad') || b.closest('#moveTools'))) uiReleasePointer();
     canvas.focus({ preventScroll: true });
   });
 
