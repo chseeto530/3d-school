@@ -1,0 +1,24 @@
+{
+  "source": "Quaternius Ultimate Animated Character Pack (November 2019)",
+  "license": "CC0-1.0",
+  "authorUrl": "https://quaternius.com/packs/ultimatedanimatedcharacter.html",
+  "mirror": "https://github.com/ariesyous/projectbluebean/tree/main/assets/Ultimate%20Animated%20Character%20Pack%20-%20Nov%202019",
+  "characters": [
+    {
+      "id": "hero-boy",
+      "role": "student",
+      "source": "Casual_Male.blend",
+      "skin": "#edc5a1",
+      "hair": "#242023",
+      "hairstyle": "tousled-quiff",
+      "largeEyes": true,
+      "authoredHair": true,
+      "hairAdaptation": "source-clumps-with-fitted-skull-coverage-and-silhouette-variants",
+      "eyeStyle": "source-oval",
+      "cap": false,
+      "sha256": "53ba36ef13e39cc244e9c61cff013670f75db49f6f138dbbc619ed626b67a2fb",
+      "bytes": 648180,
+      "continuousRearHair": true
+    }
+  ]
+}
