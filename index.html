@@ -7310,18 +7310,27 @@ const CAPSULE_BVH = (() => {
     const bar = $('wallClipBar');
     if (!bar || bar._bound) return;
     bar._bound = true;
+    // stairs6: pointerdown+click both fired → double toggle looked broken; one fire per gesture.
+    let _wallClipHandled = 0;
     const onPick = (e) => {
       const btn = e.target && e.target.closest && e.target.closest('#bWallClip');
       if (!btn || !bar.contains(btn)) return;
       // pointerdown capture — same as navis gears so PointerLock cannot swallow it.
       e.preventDefault();
       e.stopPropagation();
+      const now = performance.now();
+      if (e.type === 'pointerdown') {
+        _wallClipHandled = now;
+      } else if (e.type === 'click') {
+        // Ignore the synthetic click that follows pointerdown (would flip twice → no change).
+        if (now - _wallClipHandled < 400) return;
+      }
       if (typeof uiReleasePointer === 'function') uiReleasePointer();
       else if (document.pointerLockElement) document.exitPointerLock();
       setBimWallClip(!bimWallClipOn);
     };
     bar.addEventListener('pointerdown', onPick, true);
-    bar.addEventListener('click', onPick, true);
+    bar.addEventListener('click', onPick, true); // keyboard / a11y fallback when no prior pointerdown
   }
   bindWallClipBar();
   try { window.__bimWallClipOn = bimWallClipOn; } catch (e) { }
