@@ -667,7 +667,7 @@ button { cursor: pointer; }
 
   <div id="fade"></div>
 </div>
-<script src="vendor/three.min.js"></script><script src="vendor/GLTFLoader.js"></script><script src="vendor/SkeletonUtils.js"></script><script src="vendor/meshopt_decoder.js"></script><script src="vendor/three-mesh-bvh.min.js"></script><script src="vendor/PointerLockControls.js"></script><script>window.__kitScene={"enabled":true,"model":"school-mobile.glb","hideProceduralGeometry":true,"hideProceduralGround":true,"simpleFlatGround":true,"groundPlane":{"size":280,"color":13421772,"y":2.28},"hideDecorations":true,"keepNavPads":false,"forceOpaque":true,"batchBimMeshes":false,"simpleMaterials":false,"unitScale":1,"autoUnitScale":true,"transform":{"position":[0,0,0],"rotationY":0,"scale":1},"align":{"mode":"centerXZ","groundY":"min","offset":[80,0,68]},"camera":{"fitOnLoad":true,"padding":1.35,"minDistance":22,"maxDistance":800,"pol":0.62},"startOverview":{"tx":80,"tz":68,"dist":130.15,"az":-0.68,"pol":1.3,"auto":false,"player":{"x":93.8,"y":3.38,"z":93.01}},"navigation":{"source":"procedural","note":"行走／點擊仍用範例可行走面（已隱藏大勇建築外觀）。"},"minimap":{"file":"campus-minimap.png","padding":6,"zoom":3.35,"autoBounds":true,"syncBimRotation":true,"rotationDeg":90},"spawn":{"x":93.8,"y":3.16,"z":93.01,"yaw":6.11,"pitch":0.17,"camY":4.66,"camD":2.55,"startWalkView":{"third":true,"camD":2.55,"player":{"x":93.8,"y":3.16,"z":93.01,"yaw":6.11,"pitch":0.17,"camY":4.66},"camera":{"position":{"x":93.35,"y":4.68,"z":95.52},"rotation":{"x":0.01,"y":6.11,"z":0}}},"gfWalkView":{"third":true,"camD":2.55,"player":{"x":90.32,"y":2.94,"z":84.95,"yaw":0.94,"pitch":0.17,"camY":4.44},"camera":{"position":{"x":92.38,"y":4.46,"z":86.46},"rotation":{"x":0.01,"y":0.94,"z":0}}},"f1WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":6.83,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":8.33},"camera":{"position":{"x":113.79,"y":8.35,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"f2WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":10.97,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":12.47},"camera":{"position":{"x":113.79,"y":12.5,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"f3WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":14.56,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":16.06},"camera":{"position":{"x":113.79,"y":16.08,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"f4WalkView":{"third":true,"camD":2.55,"player":{"x":110.81,"y":18.59,"z":69.96,"yaw":8.74,"pitch":0.24,"camY":20.09},"camera":{"position":{"x":112.41,"y":19.94,"z":67.99},"rotation":{"x":0.08,"y":8.74,"z":0}}},"footLift":0.18,"floorBias":0.04,"modelLift":0.055,"gfY":2.28,"snapFloorY":false,"walkGrid":"async","flatWalk":true,"stairWalk":true,"walkGridCell":1,"walkGridBatch":36,"wallCollide":true,"flyMode":true,"flyVertMps":12,"flyVertMul":1.12,"airMoveMul":1.1,"flyMin":3,"flyMax":32,"playerRadius":0.4,"clickMove":false,"walkSimple":true,"walkLiteCollide":true,"walkCamCollide":false,"walkCamLerpPow":0.008,"walkInstantLook":true,"walkCamSnap":false,"walkResponsive":true,"walkInstantMove":true,"walkOrbitCam":true,"walkFaceLerp":16,"walkCamLookLerp":28,"walkNavis":true,"walkVelAccel":22,"walkVelDamp":9,"walkCamPosLerp":16,"walkPerfCull":true,"walkPerfFar":11,"walkPerfCullChunk":60,"walkPerfDprOnMove":true,"walkPerfDprMove":0.35,"walkPerfDprIdle":0.75,"walkPerfDprMax":1,"walkPerfBatch":false,"walkPerfBatchMin":3,"walkPerfLod":true,"walkPerfSharedMat":false,"arrowWalk":true,"walkRotate":false,"walkSpeed":1.05,"moveSpeed":1.05,"walkBaseMul":1,"collideSeg":0.1,"collideMaxSeg":6,"npcSpeedMul":3,"npcPathPause":0.55,"greetingDuration":0,"instantGreetings":true,"lookSens":1.22,"forceThird":true,"npcPushGap":0.55,"walkVisDirect":true,"walkVisRate":72,"walkVisFaceRate":28,"note":"wallCollide=true：Capsule+BVH 擋牆＋滑行；移動一律 velocity*deltaTime；PointerLock 轉頭。 Desktop+mobile perf: walkPerfCull/Lod/DprOnMove on; dprMax 1.25 idle / 0.7 on move; walkPerfFar 18; shadows off; capsuleBvhMax 220 (mobile 160); walkCamFar 140; BVH defer 1200ms; navGrid on startNav only. | walls3: soft-pass off; BVH defer 250ms; capsuleBvhMax 600; secondary Raycaster collide. | perf8: radius 0.38; collideSeg 0.08; BVH max 700; soft-pass off; tighter capsule steps. | walls4: Raycaster+AABB authoritative solid; multi-height rays; door gaps via collision.openings only; BVH slide optional. | stairs1: stairWalk on; soften AABB so stair flights not solid walls. | stairs2: AABB thin-only (no building-shell eject to door); openings entry→lobby→first stair; stair move-hit skip low risers. | stairs3: Raycaster solid for fat shells (bimRayOnly); AABB thin≤1.55+MAX_PUSH; Walk HUD「穿牆」toggle default OFF; soft-pass only when ON. | stairs5: Capsule primary + sparse ray gate (1/4) + aabbOnly; bvhMax 320; dprMove 0.45; skip procedural IK when skinned; pose every-other-frame while moving; MOVE_MAX_STEPS 5. | stairs8: restore control — Capsule maxSteps 4; ray gate 1/4 + aabbOnly; maxRayOnly 4; bvhMax 320/160; MOVE_MAX_STEPS 5; pose every-other while moving; no ensureHeroVisible hot path; skip BIM blob shadow; NPC update every-other while moving (NEVER hide npcs.root); dprMove 0.4 / idle 0.9 / max 1.1; walkPerfFar 14. Keep stairs6 _wallClipHandled. | stairs9: draw cheaper (dprMove 0.35 / idle 0.75 / max 1.0 / far 11 / cullChunk 60); NPC update every-3rd while moving + near-only player–NPC collide (~7m); minimap ≤0.25s while moving; KEEP collide stairs5/8 (ray&3, maxSteps4, maxRayOnly4, bvhMax320/160, MOVE_MAX5); NEVER hide npcs.root; stairs6 _wallClipHandled.","f5WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":22.04,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":23.54},"camera":{"position":{"x":113.79,"y":23.56,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"capsuleBvhMax":320,"capsuleBvhMaxMobile":160,"walkCamFar":140},"collision":{"doorSkip":["door","doors","门","門","glass","curtain wall door","door-fr","revolving","entrance","exit","gate","opening","portal","sliding","入口","出口","大門","大门","自動門","自动门","fire door","leaf"],"ringCollide":true,"navCell":0.85,"navBatch":40,"note":"stairs3: Raycaster authoritative for fat merged wall shells (bimRayOnly in collidePick); AABB thin-only (MAX_THIN 1.55, MAX_PUSH 1.85, skip bimRayOnly) — no door-eject; stairWalk on; openings 正門→大堂→第一樓梯腳; soft-pass off unless Walk HUD「穿牆」ON.","openings":[{"label":"正門起點緩衝","x":93.1,"z":94.36,"halfX":2.8,"halfZ":2.2,"minY":1.9,"maxY":5.5},{"label":"正門圍籬出入口","x":92.5,"z":97.8,"halfX":3.2,"halfZ":2.4,"minY":1.9,"maxY":5.5},{"label":"正門立面門洞","x":93.2,"z":90.55,"halfX":2.6,"halfZ":1.35,"minY":1.9,"maxY":5.6},{"label":"大堂入口走廊","x":93,"z":87.4,"halfX":3,"halfZ":2.4,"minY":1.9,"maxY":5.6},{"label":"往第一樓梯腳","x":100.5,"z":82,"halfX":5.5,"halfZ":4,"minY":1.9,"maxY":7.2}],"capsuleBvh":true},"floors":{"allLabel":"全部","allValue":9,"levelHeight":3.45,"levels":[{"label":"GF","value":0},{"label":"1F","value":1},{"label":"2F","value":2},{"label":"3F","value":3},{"label":"4F","value":4},{"label":"5F","value":5}]},"url":"models/school-mobile.glb?v=20048016","gltfBytes":20048016,"bimRev":"20048016","liteGltfBytes":46279444};</script><div id="bimFileGuard" hidden style="position:fixed;inset:0;z-index:100000;background:#0f1a24;color:#f6f2e8;padding:28px 32px;font-family:'Segoe UI','Microsoft JhengHei',sans-serif;overflow:auto;line-height:1.55">
+<script src="vendor/three.min.js"></script><script src="vendor/GLTFLoader.js"></script><script src="vendor/SkeletonUtils.js"></script><script src="vendor/meshopt_decoder.js"></script><script src="vendor/three-mesh-bvh.min.js"></script><script src="vendor/PointerLockControls.js"></script><script>window.__kitScene={"enabled":true,"model":"school-mobile.glb","hideProceduralGeometry":true,"hideProceduralGround":true,"simpleFlatGround":true,"groundPlane":{"size":280,"color":13421772,"y":2.28},"hideDecorations":true,"keepNavPads":false,"forceOpaque":true,"batchBimMeshes":false,"simpleMaterials":false,"unitScale":1,"autoUnitScale":true,"transform":{"position":[0,0,0],"rotationY":0,"scale":1},"align":{"mode":"centerXZ","groundY":"min","offset":[80,0,68]},"camera":{"fitOnLoad":true,"padding":1.35,"minDistance":22,"maxDistance":800,"pol":0.62},"startOverview":{"tx":80,"tz":68,"dist":130.15,"az":-0.68,"pol":1.3,"auto":false,"player":{"x":93.8,"y":3.38,"z":93.01}},"navigation":{"source":"procedural","note":"行走／點擊仍用範例可行走面（已隱藏大勇建築外觀）。"},"minimap":{"file":"campus-minimap.png","padding":6,"zoom":3.35,"autoBounds":true,"syncBimRotation":true,"rotationDeg":90},"spawn":{"x":93.8,"y":3.16,"z":93.01,"yaw":6.11,"pitch":0.17,"camY":4.66,"camD":2.55,"startWalkView":{"third":true,"camD":2.55,"player":{"x":93.8,"y":3.16,"z":93.01,"yaw":6.11,"pitch":0.17,"camY":4.66},"camera":{"position":{"x":93.35,"y":4.68,"z":95.52},"rotation":{"x":0.01,"y":6.11,"z":0}}},"gfWalkView":{"third":true,"camD":2.55,"player":{"x":90.32,"y":2.94,"z":84.95,"yaw":0.94,"pitch":0.17,"camY":4.44},"camera":{"position":{"x":92.38,"y":4.46,"z":86.46},"rotation":{"x":0.01,"y":0.94,"z":0}}},"f1WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":6.83,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":8.33},"camera":{"position":{"x":113.79,"y":8.35,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"f2WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":10.97,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":12.47},"camera":{"position":{"x":113.79,"y":12.5,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"f3WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":14.56,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":16.06},"camera":{"position":{"x":113.79,"y":16.08,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"f4WalkView":{"third":true,"camD":2.55,"player":{"x":110.81,"y":18.59,"z":69.96,"yaw":8.74,"pitch":0.24,"camY":20.09},"camera":{"position":{"x":112.41,"y":19.94,"z":67.99},"rotation":{"x":0.08,"y":8.74,"z":0}}},"footLift":0.18,"floorBias":0.04,"modelLift":0.055,"gfY":2.28,"snapFloorY":false,"walkGrid":"async","flatWalk":true,"stairWalk":true,"walkGridCell":1,"walkGridBatch":36,"wallCollide":true,"flyMode":true,"flyVertMps":12,"flyVertMul":1.12,"airMoveMul":1.1,"flyMin":3,"flyMax":32,"playerRadius":0.4,"clickMove":false,"walkSimple":true,"walkLiteCollide":true,"walkCamCollide":false,"walkCamLerpPow":0.008,"walkInstantLook":true,"walkCamSnap":false,"walkResponsive":true,"walkInstantMove":true,"walkOrbitCam":true,"walkFaceLerp":16,"walkCamLookLerp":28,"walkNavis":true,"walkVelAccel":22,"walkVelDamp":9,"walkCamPosLerp":16,"walkPerfCull":true,"walkPerfFar":14,"walkPerfCullChunk":100,"walkPerfDprOnMove":true,"walkPerfDprMove":0.37,"walkPerfDprIdle":0.9,"walkPerfDprMax":1.1,"walkPerfBatch":false,"walkPerfBatchMin":3,"walkPerfLod":true,"walkPerfSharedMat":false,"arrowWalk":true,"walkRotate":false,"walkSpeed":1.05,"moveSpeed":1.05,"walkBaseMul":1,"collideSeg":0.1,"collideMaxSeg":6,"npcSpeedMul":3,"npcPathPause":0.55,"greetingDuration":0,"instantGreetings":true,"lookSens":1.22,"forceThird":true,"npcPushGap":0.55,"walkVisDirect":true,"walkVisRate":72,"walkVisFaceRate":28,"note":"wallCollide=true：Capsule+BVH 擋牆＋滑行；移動一律 velocity*deltaTime；PointerLock 轉頭。 Desktop+mobile perf: walkPerfCull/Lod/DprOnMove on; dprMax 1.25 idle / 0.7 on move; walkPerfFar 18; shadows off; capsuleBvhMax 220 (mobile 160); walkCamFar 140; BVH defer 1200ms; navGrid on startNav only. | walls3: soft-pass off; BVH defer 250ms; capsuleBvhMax 600; secondary Raycaster collide. | perf8: radius 0.38; collideSeg 0.08; BVH max 700; soft-pass off; tighter capsule steps. | walls4: Raycaster+AABB authoritative solid; multi-height rays; door gaps via collision.openings only; BVH slide optional. | stairs1: stairWalk on; soften AABB so stair flights not solid walls. | stairs2: AABB thin-only (no building-shell eject to door); openings entry→lobby→first stair; stair move-hit skip low risers. | stairs3: Raycaster solid for fat shells (bimRayOnly); AABB thin≤1.55+MAX_PUSH; Walk HUD「穿牆」toggle default OFF; soft-pass only when ON. | stairs5: Capsule primary + sparse ray gate (1/4) + aabbOnly; bvhMax 320; dprMove 0.45; skip procedural IK when skinned; pose every-other-frame while moving; MOVE_MAX_STEPS 5. | stairs8: restore control — Capsule maxSteps 4; ray gate 1/4 + aabbOnly; maxRayOnly 4; bvhMax 320/160; MOVE_MAX_STEPS 5; pose every-other while moving; no ensureHeroVisible hot path; skip BIM blob shadow; NPC update every-other while moving (NEVER hide npcs.root); dprMove 0.4 / idle 0.9 / max 1.1; walkPerfFar 14. Keep stairs6 _wallClipHandled. | stairs9: walk hitch — freeze static BIM matrices; capsule XZ broadphase (reach r+0.55) + cached inverse + one shapecast callback (bvhMax stays 320/160, maxSteps 4); wallsNear reused within 0.4m; every-4th ray is fat bimRayOnly only (maxRayOnly 4, thin=capsule+AABB every step); sole-contact stride while moving; pose still every-other; NPC update every-other while moving + near-only player-NPC collide (~7m) + skip greetings while moving (NEVER hide npcs.root); minimap <=0.25s while moving; dprMove 0.37 (idle 0.9 / max 1.1 / far 14 / cullChunk 100, no fps-scaler DPR fight); BVH build delay 8ms. NOT stairs7: no dprMove 0.35, no far 11, no hide NPCs, ray gate 1/4, MOVE_MAX_STEPS 5, bvhMax 320/160. Keep stairs6 _wallClipHandled.","f5WalkView":{"third":true,"camD":2.55,"player":{"x":114.23,"y":22.04,"z":72.74,"yaw":6.11,"pitch":0.17,"camY":23.54},"camera":{"position":{"x":113.79,"y":23.56,"z":75.25},"rotation":{"x":0.01,"y":6.11,"z":0}}},"capsuleBvhMax":320,"capsuleBvhMaxMobile":160,"walkCamFar":140},"collision":{"doorSkip":["door","doors","门","門","glass","curtain wall door","door-fr","revolving","entrance","exit","gate","opening","portal","sliding","入口","出口","大門","大门","自動門","自动门","fire door","leaf"],"ringCollide":true,"navCell":0.85,"navBatch":40,"note":"stairs3: Raycaster authoritative for fat merged wall shells (bimRayOnly in collidePick); AABB thin-only (MAX_THIN 1.55, MAX_PUSH 1.85, skip bimRayOnly) — no door-eject; stairWalk on; openings 正門→大堂→第一樓梯腳; soft-pass off unless Walk HUD「穿牆」ON.","openings":[{"label":"正門起點緩衝","x":93.1,"z":94.36,"halfX":2.8,"halfZ":2.2,"minY":1.9,"maxY":5.5},{"label":"正門圍籬出入口","x":92.5,"z":97.8,"halfX":3.2,"halfZ":2.4,"minY":1.9,"maxY":5.5},{"label":"正門立面門洞","x":93.2,"z":90.55,"halfX":2.6,"halfZ":1.35,"minY":1.9,"maxY":5.6},{"label":"大堂入口走廊","x":93,"z":87.4,"halfX":3,"halfZ":2.4,"minY":1.9,"maxY":5.6},{"label":"往第一樓梯腳","x":100.5,"z":82,"halfX":5.5,"halfZ":4,"minY":1.9,"maxY":7.2}],"capsuleBvh":true},"floors":{"allLabel":"全部","allValue":9,"levelHeight":3.45,"levels":[{"label":"GF","value":0},{"label":"1F","value":1},{"label":"2F","value":2},{"label":"3F","value":3},{"label":"4F","value":4},{"label":"5F","value":5}]},"url":"models/school-mobile.glb?v=20048016","gltfBytes":20048016,"bimRev":"20048016","liteGltfBytes":46279444};</script><div id="bimFileGuard" hidden style="position:fixed;inset:0;z-index:100000;background:#0f1a24;color:#f6f2e8;padding:28px 32px;font-family:'Segoe UI','Microsoft JhengHei',sans-serif;overflow:auto;line-height:1.55">
   <h1 style="margin:0 0 16px;color:#ffd23f;font-size:26px">BIM 不能用「雙擊 HTML」開啟</h1>
   <p style="max-width:640px">網址列若是 <code style="background:#1a2634;padding:2px 6px;border-radius:4px">file:///</code> …，瀏覽器<strong>無法讀取</strong>同資料夾的 <code>models/school.gltf + school.bin</code>（或大型 <code>school.bin</code>），BIM 會一直載入失敗。</p>
   <h2 style="font-size:18px;color:#58c98b">請改這樣做（3 步）</h2>
@@ -2973,7 +2973,15 @@ const ULTIMATE_MODELS=(()=>{
   sync(node);
  }
  function groundTargetY(node,walking){
-  const r=node.userData.ultimate,p=new r.T.Vector3();sync(node);const ys=[];for(const m of r.meshes)m.skeleton.update();for(const c of r.contacts){p.fromBufferAttribute(c.mesh.geometry.attributes.position,c.index);c.mesh.boneTransform(c.index,p);p.applyMatrix4(c.mesh.matrixWorld);ys.push(p.y);}
+  // stairs9: while BIM walk is moving, sample a stride of sole contacts (pose stays every-other).
+  // Idle / non-BIM still scans every contact. Reuse scratch buffers so sole snap does not allocate.
+  const r=node.userData.ultimate,p=r._footP||(r._footP=new r.T.Vector3());sync(node);
+  const ys=r._footYs||(r._footYs=[]);ys.length=0;
+  for(const m of r.meshes)m.skeleton.update();
+  const contacts=r.contacts;
+  const bimMove=walking&&typeof window!=='undefined'&&window.__bimLoaded&&!window.__bimLoaded.noWallCollide;
+  const stride=bimMove&&contacts.length>36?Math.ceil(contacts.length/28):1;
+  for(let i=0;i<contacts.length;i+=stride){const c=contacts[i];p.fromBufferAttribute(c.mesh.geometry.attributes.position,c.index);c.mesh.boneTransform(c.index,p);p.applyMatrix4(c.mesh.matrixWorld);ys.push(p.y);}
   if(!ys.length)return 0;
   ys.sort((a,b)=>a-b);
   let low=ys[0];
@@ -5283,6 +5291,7 @@ const KIT_BIM = (() => {
   let _walkRay = null;
   let _walkRayO = null;
   let _walkRayD = null;
+  const _fatRayPick = [];
   function walkRaycaster(T) {
     if (!_walkRay) {
       _walkRay = new T.Raycaster();
@@ -5461,20 +5470,30 @@ const KIT_BIM = (() => {
     if (move > 1e-5) {
       const ray = walkRaycaster(T);
       // stairs5: lite 1h×1 origin; full 2h×1 (drop lateral rays — AABB covers thin)
+      // stairs9: fatRayOnly keeps the 1/4 gate on fat shells; thin walls stay capsule+AABB.
       const heights = lite
         ? [feet + 0.95]
         : [feet + 0.5, feet + 1.35];
       const ux = dx / move, uz = dz / move;
       const origins = [[fromX, fromZ]];
+      let rayPick = pick;
+      if (opts.fatRayOnly) {
+        _fatRayPick.length = 0;
+        for (let fi = 0; fi < pick.length; fi++) {
+          const fo = pick[fi];
+          if (fo && fo.userData && fo.userData.bimRayOnly) _fatRayPick.push(fo);
+        }
+        rayPick = _fatRayPick;
+      }
       outerMove:
-      for (let oi = 0; oi < origins.length; oi++) {
+      for (let oi = 0; oi < origins.length && rayPick.length; oi++) {
         const ox = origins[oi][0], oz = origins[oi][1];
         for (let hi = 0; hi < heights.length; hi++) {
           _walkRayO.set(ox, heights[hi], oz);
           _walkRayD.set(ux, 0, uz);
           ray.set(_walkRayO, _walkRayD);
           ray.far = move + r + 0.42;
-          const hits = ray.intersectObjects(pick, false);
+          const hits = ray.intersectObjects(rayPick, false);
           for (let i = 0; i < hits.length; i++) {
             const h = hits[i];
             if (!wallMoveHitOk(h, r, move, openings)) continue;
@@ -6496,6 +6515,54 @@ const CAPSULE_BVH = (() => {
   const _dir = new THREE.Vector3();
   const _worldStart = new THREE.Vector3();
   const _worldEnd = new THREE.Vector3();
+  // stairs9: one shapecast callback object + a scratch near-list (no per-mesh alloc).
+  let _shapeHit = false;
+  let _shapeRadius = 0.3;
+  const _capNear = [];
+  const _shapeCast = {
+    intersectsBounds(box) {
+      return box.intersectsBox(_box);
+    },
+    intersectsTriangle(tri) {
+      const radius = _shapeRadius;
+      const distance = tri.closestPointToSegment(_seg, _triPoint, _capPoint);
+      if (distance >= radius) return;
+      const depth = radius - distance;
+      _dir.copy(_capPoint).sub(_triPoint);
+      if (_dir.lengthSq() < 1e-12) {
+        if (typeof tri.getNormal === 'function') tri.getNormal(_dir);
+        else _dir.set(0, 0, 1);
+      }
+      _dir.normalize();
+      _seg.start.addScaledVector(_dir, depth);
+      _seg.end.addScaledVector(_dir, depth);
+      _box.min.x -= depth; _box.min.y -= depth; _box.min.z -= depth;
+      _box.max.x += depth; _box.max.y += depth; _box.max.z += depth;
+      _shapeHit = true;
+    },
+  };
+
+  /** Static BIM: invert world matrix once. Refresh only if Three marks the mesh dirty. */
+  function capsuleMeshWorld(mesh) {
+    const ud = mesh.userData || (mesh.userData = {});
+    if (!ud._capInv || mesh.matrixWorldNeedsUpdate) {
+      if (mesh.matrixWorldNeedsUpdate) mesh.updateWorldMatrix(true, false);
+      if (!ud._capInv) ud._capInv = new THREE.Matrix4();
+      if (!ud._capWorld) ud._capWorld = new THREE.Matrix4();
+      ud._capWorld.copy(mesh.matrixWorld);
+      ud._capInv.copy(mesh.matrixWorld).invert();
+    }
+    _inv.copy(ud._capInv);
+    return ud._capWorld;
+  }
+
+  /** Skip shapecast when the mesh XZ box cannot touch this capsule step.
+   *  Missing box → do not skip (control). reach is radius + slide margin. */
+  function meshOutsideCapsule(mesh, x, z, reach) {
+    const b = mesh.userData && mesh.userData.bimXZBox;
+    if (!b) return false;
+    return b[1] < x - reach || b[0] > x + reach || b[3] < z - reach || b[2] > z + reach;
+  }
 
   function lib() {
     return (typeof MeshBVHLib !== 'undefined' && MeshBVHLib.MeshBVH) ? MeshBVHLib : null;
@@ -6573,8 +6640,7 @@ const CAPSULE_BVH = (() => {
   function resolveMesh(mesh, radius) {
     const tree = mesh.geometry && mesh.geometry.boundsTree;
     if (!tree) return false;
-    mesh.updateWorldMatrix(true, false);
-    _inv.copy(mesh.matrixWorld).invert();
+    const world = capsuleMeshWorld(mesh);
 
     _seg.start.copy(_worldStart).applyMatrix4(_inv);
     _seg.end.copy(_worldEnd).applyMatrix4(_inv);
@@ -6585,32 +6651,13 @@ const CAPSULE_BVH = (() => {
     _box.min.x -= radius; _box.min.y -= radius; _box.min.z -= radius;
     _box.max.x += radius; _box.max.y += radius; _box.max.z += radius;
 
-    let hit = false;
-    tree.shapecast({
-      intersectsBounds(box) {
-        return box.intersectsBox(_box);
-      },
-      intersectsTriangle(tri) {
-        const distance = tri.closestPointToSegment(_seg, _triPoint, _capPoint);
-        if (distance >= radius) return;
-        const depth = radius - distance;
-        _dir.copy(_capPoint).sub(_triPoint);
-        if (_dir.lengthSq() < 1e-12) {
-          if (typeof tri.getNormal === 'function') tri.getNormal(_dir);
-          else _dir.set(0, 0, 1);
-        }
-        _dir.normalize();
-        _seg.start.addScaledVector(_dir, depth);
-        _seg.end.addScaledVector(_dir, depth);
-        _box.min.x -= depth; _box.min.y -= depth; _box.min.z -= depth;
-        _box.max.x += depth; _box.max.y += depth; _box.max.z += depth;
-        hit = true;
-      },
-    });
+    _shapeHit = false;
+    _shapeRadius = radius;
+    tree.shapecast(_shapeCast);
 
-    if (!hit) return false;
-    _worldStart.copy(_seg.start).applyMatrix4(mesh.matrixWorld);
-    _worldEnd.copy(_seg.end).applyMatrix4(mesh.matrixWorld);
+    if (!_shapeHit) return false;
+    _worldStart.copy(_seg.start).applyMatrix4(world);
+    _worldEnd.copy(_seg.end).applyMatrix4(world);
     return true;
   }
 
@@ -6619,14 +6666,23 @@ const CAPSULE_BVH = (() => {
     setCapsuleSegment(x, feetY, z, r, h);
     _worldStart.copy(_segStart);
     _worldEnd.copy(_segEnd);
+    // stairs9: broadphase only. bvhMax / maxSteps stay at the caller (320/4).
+    const reach = r + 0.55;
     let hit = false;
     for (let iter = 0; iter < iterations; iter++) {
-      let any = false;
+      const mx0 = (_worldStart.x + _worldEnd.x) * 0.5;
+      const mz0 = (_worldStart.z + _worldEnd.z) * 0.5;
+      _capNear.length = 0;
       for (let i = 0; i < meshes.length; i++) {
         const mesh = meshes[i];
         if (!mesh || !mesh.geometry || !mesh.geometry.boundsTree) continue;
         if (mesh.userData && mesh.userData.bimDoor) continue;
-        if (resolveMesh(mesh, r)) any = true;
+        if (meshOutsideCapsule(mesh, mx0, mz0, reach)) continue;
+        _capNear.push(mesh);
+      }
+      let any = false;
+      for (let i = 0; i < _capNear.length; i++) {
+        if (resolveMesh(_capNear[i], r)) any = true;
       }
       if (!any) break;
       hit = true;
@@ -7312,7 +7368,7 @@ const CAPSULE_BVH = (() => {
     if (!bar || bar._bound) return;
     bar._bound = true;
     // stairs6: pointerdown+click both fired → double toggle looked broken; one fire per gesture.
-    // stairs9: keep stairs6 _wallClipHandled; collide stays stairs8/5 (no KEYMAP / wall-clip logic change).
+    // stairs9: keep stairs6 _wallClipHandled; debounce unchanged (pointerdown+click still one toggle).
     let _wallClipHandled = 0;
     const onPick = (e) => {
       const btn = e.target && e.target.closest && e.target.closest('#bWallClip');
@@ -7547,9 +7603,9 @@ const CAPSULE_BVH = (() => {
           },
         );
         bimRayGateTick = (bimRayGateTick + 1) | 0;
-        // Short moves: aabbOnly. Every 4th collide step: lite ray for fat shells (stairs5).
+        // stairs9: still every 4th step (not 1/8). Ray is fat shells only; short moves stay aabbOnly.
         const doRay = moveLen >= 0.08 && (bimRayGateTick & 3) === 0;
-        bimPlayerCollide(ox, oz, doRay ? true : 'aabb');
+        bimPlayerCollide(ox, oz, doRay ? 'fat' : 'aabb');
         return;
       }
     }
@@ -7711,6 +7767,17 @@ const CAPSULE_BVH = (() => {
       return gf + f * step + step * 0.38;
     }
     return fy(Math.max(f, 0));
+  }
+  /** stairs9: school mesh is static after align + walk-perf reparent.
+   *  A no-op updateMatrixWorld skips a full graph walk every frame. Render still culls.
+   *  Collide uses the baked matrixWorld (capsule cache refreshes if a mesh is marked dirty). */
+  function freezeStaticBimMatrices(root) {
+    if (!root || root.userData._bimMatricesFrozen) return;
+    root.updateMatrixWorld(true);
+    root.traverse(o => { o.matrixAutoUpdate = false; });
+    root.updateMatrixWorld = function () {};
+    root.userData._bimMatricesFrozen = true;
+    console.info('[BIM] stairs9: static matrix freeze', '(per-frame matrix walk skipped)');
   }
   /** 還原 BIM 顯示（裁切／隱藏 mesh），鳥瞰與步行切換後呼叫。 */
   function ensureBimViewClean() {
@@ -8901,8 +8968,9 @@ const CAPSULE_BVH = (() => {
   // 人物是實心的：玩家不會穿過 NPC。站著的人把玩家擋住（玩家沿著他滑過去）；走路中的人會自己停下或讓開（ultimate-npcs.js 的 separate）。
   // NPC 都在地面層，所以只有玩家在地面附近才檢查。
   /** 移動前先縮短速度，避免走得太近 NPC（公尺，約等同螢幕上 30px 級社交距離）。 */
+  const _npcClip = [0, 0];
   function playerClipVelForNpc(vx, vz, dt) {
-    if (!npcs.bodies || Math.abs(P.y) > 1.2 || !dt) return [vx, vz];
+    if (!npcs.bodies || Math.abs(P.y) > 1.2 || !dt) { _npcClip[0] = vx; _npcClip[1] = vz; return _npcClip; }
     const minGap = kitSpawnNum('npcPushGap', 0.55);
     let ox = vx;
     let oz = vz;
@@ -8927,7 +8995,9 @@ const CAPSULE_BVH = (() => {
         oz = vz * k;
       }
     }
-    return [ox, oz];
+    _npcClip[0] = ox;
+    _npcClip[1] = oz;
+    return _npcClip;
   }
   function npcPush() {
     if (!npcs.bodies || Math.abs(P.y) > 1.2) return;
@@ -8952,10 +9022,11 @@ const CAPSULE_BVH = (() => {
   let bimCollideTick = 0;
   let bimRayGateTick = 0;
   let bimCollidePickCache = null;
+  let bimNearAnchor = null; // stairs9: reuse wallsNear while the player stays within 0.4m
   let bimCollideDidMove = false;
   let bimPoseSkip = 0;
   let bimNpcStopAcc = 0; // stairs8: unused (no longer hide NPCs while moving)
-  let bimNpcFrame = 0; // stairs9: every-3rd-frame NPC update while moving (never hide)
+  let bimNpcFrame = 0; // stairs9: every-other-frame NPC update while moving (never hide)
   let miniDrawT = 0;
   let bimWalkLeftover = 0;
   const BIM_WALK_FIXED = 1 / 60;
@@ -9002,6 +9073,15 @@ const CAPSULE_BVH = (() => {
     const L = window.__bimLoaded;
     if (!L || L.noWallCollide) return null;
     if (bimCollidePickCache && bimCollidePickCache.tick === bimCollideTick) return bimCollidePickCache.pick;
+    // stairs9: same near-set for ~0.4m (pad is ~4m). Does not drop maxRayOnly or density.
+    if (bimCollidePickCache && bimNearAnchor) {
+      const adx = x - bimNearAnchor.x;
+      const adz = z - bimNearAnchor.z;
+      if (adx * adx + adz * adz < 0.16) {
+        bimCollidePickCache.tick = bimCollideTick;
+        return bimCollidePickCache.pick;
+      }
+    }
     // Prefer full collidePick (wider solid set) so Raycaster/AABB see walls BVH may truncate.
     let pick = L.collidePick || L.wallPick;
     if (!pick || !pick.length) return null;
@@ -9012,6 +9092,7 @@ const CAPSULE_BVH = (() => {
     if (KIT_BIM.wallsNear) {
       pick = KIT_BIM.wallsNear(THREE, pick, x, z, r, extra, { force: true, maxRayOnly: 4, rayExtra: 2.0 });
     }
+    bimNearAnchor = { x: x, z: z };
     bimCollidePickCache = { tick: bimCollideTick, pick };
     return pick;
   }
@@ -9042,6 +9123,8 @@ const CAPSULE_BVH = (() => {
     const opts = bimCollideOpts(
       lite === 'aabb' ? { aabbOnly: true } : (lite ? { liteRay: true } : null)
     );
+    // stairs9: 'fat' (and any non-aabb lite ray while capsule is primary) does not ray thin walls.
+    if (lite === 'fat') opts.fatRayOnly = true;
     const feetY = P.y + 0.88;
     const fx = fromX != null ? fromX : P.x;
     const fz = fromZ != null ? fromZ : P.z;
@@ -9160,6 +9243,7 @@ const CAPSULE_BVH = (() => {
         const chunk = isTouch ? 20 : 16;
         CAPSULE_BVH.buildBVHAsync(collideMeshes, {
           chunk,
+          delay: isTouch ? 16 : 8, // stairs9: spread BVH build so it does not stack on the walk frame
           onProgress(done, total) {
             if (!early && done >= Math.min(chunk, total)) {
               early = true;
@@ -9757,9 +9841,12 @@ const CAPSULE_BVH = (() => {
         bimPoseSkip = (bimPoseSkip + 1) | 0;
         const moving = P.speed > 0.35;
         P.bimSkipShadow = !!(window.__bimLoaded && mode === 'walk');
-        if (avatar.userData.shadow) avatar.userData.shadow.visible = !P.bimSkipShadow;
-        if (!moving || (bimPoseSkip & 1) === 0) poseAvatar(performance.now());
-        // stairs9: skip projectAvatarShadow on skipped pose frames (BIM walk)
+        // stairs9: pose stays every-other while moving (not every-3rd). Skipped frames also skip shadow writes.
+        const poseNow = !moving || (bimPoseSkip & 1) === 0;
+        if (poseNow) {
+          if (avatar.userData.shadow) avatar.userData.shadow.visible = !P.bimSkipShadow;
+          poseAvatar(performance.now());
+        }
       }
     } else {
       const sp = Math.sin(OV.pol), ty = kitFloorLookY(cut);
@@ -9785,7 +9872,9 @@ const CAPSULE_BVH = (() => {
   function setQuality(q) {
     QUALITY = q; const dprCap = isTouch ? 1 : 1.25;
     const dpr = typeof BIM_WALK_PERF !== 'undefined' ? BIM_WALK_PERF.maxPixelRatio() : Math.min(window.devicePixelRatio || 1, dprCap);
-    renderer.setPixelRatio(q === 0 ? Math.min(dpr, dprCap) : q === 1 ? Math.min(dpr, 1.15) : Math.min(dpr, 1));
+    // stairs9: while BIM walk perf owns DPR, do not realloc the drawing buffer from the fps scaler.
+    const walkOwnsDpr = mode === 'walk' && window.__bimLoaded && typeof BIM_WALK_PERF !== 'undefined';
+    if (!walkOwnsDpr) renderer.setPixelRatio(q === 0 ? Math.min(dpr, dprCap) : q === 1 ? Math.min(dpr, 1.15) : Math.min(dpr, 1));
     // Campus BIM: never soft-shadow / sun shadow (desktop lag); keep shadowMap off.
     renderer.shadowMap.type = THREE.PCFShadowMap;
     sun.castShadow = false;
@@ -9848,7 +9937,7 @@ const CAPSULE_BVH = (() => {
     MAT.pad.opacity = 0.8 + Math.sin(now / 320) * 0.16;
     if (NAV) { chevTex.offset.x -= frameDt * 1.6; beacon.material.opacity = 0.26 + Math.sin(now / 260) * 0.1; }
     placeCamera(); if (VR.on) vrAfterPlace(frameDt);
-    // stairs9: NEVER hide npcs.root while moving (stairs7 失控). Update every 3rd frame while walk+moving; skip greetings while moving.
+    // stairs9: NEVER hide npcs.root. Update every other frame while moving; skip greetings while moving.
     {
       const walkMoving = mode === 'walk' && P.speed > 0.35;
       if (npcs.root && !npcs.root.visible) npcs.root.visible = true;
@@ -9858,7 +9947,7 @@ const CAPSULE_BVH = (() => {
         interactions: !walkMoving, // stairs9: skip greeting encounters while moving
       };
       bimNpcFrame = (bimNpcFrame + 1) | 0;
-      if (!walkMoving || (bimNpcFrame % 3) === 0) {
+      if (!walkMoving || (bimNpcFrame & 1) === 0) {
         npcs.update(now / 1000, VR.on ? VR.eye : camera, cut, npcOpts);
       }
     }
@@ -10099,6 +10188,7 @@ const CAPSULE_BVH = (() => {
         BIM_WALK_PERF.setWalkMode(mode === 'walk');
       }
       console.info('[BIM] desktop perf: antialias off, shadows off, dpr≤' + (isTouch ? 1 : 1.25) + ', bvhMax=' + (isTouch ? kitSpawnNum('capsuleBvhMaxMobile', 160) : kitSpawnNum('capsuleBvhMax', 320)) + ', walkPerfCull/Lod/DprOnMove from scene');
+      freezeStaticBimMatrices(result.root);
       ensureBimViewClean();
       setBimUi('ok', 'BIM 已載入（' + result.pick.length + ' 件）。可按「先看鳥瞰」或「走進校園」。');
       if (!kitSkipStart()) bimToast('BIM 已載入', result.pick.length + ' 件構件');
