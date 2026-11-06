@@ -174,7 +174,8 @@ button { cursor: pointer; }
 .navis-speed-btns button { flex: 1 1 calc(33% - 6px); min-width: 52px; height: 36px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .07); color: #e8eef5; font-size: 12px; font-weight: 700; cursor: pointer; pointer-events: auto; position: relative; z-index: 1; }
 .navis-speed-btns button:hover { background: rgba(255, 255, 255, .14); }
 .navis-speed-btns button.on { background: #3d8bfd; border-color: #6aa8ff; color: #fff; box-shadow: 0 0 0 1px rgba(106, 168, 255, .45); }
-.wall-clip-bar { position: absolute; left: 16px; top: calc(var(--top-bottom, 72px) + 150px); z-index: 40; width: 220px; padding: 8px 10px; pointer-events: auto !important; touch-action: manipulation; }
+.wall-clip-bar { position: absolute; left: 16px; top: calc(var(--top-bottom, 72px) + 200px); z-index: 40; width: 220px; padding: 8px 10px; pointer-events: auto !important; touch-action: manipulation; }
+/* stairs4: was +150 — overlapped navis-speed-bar (~126px tall from +56 → ends ~+182). Clear gap below 1×–5×. */
 .wall-clip-bar[hidden] { display: none !important; }
 .wall-clip-btn { width: 100%; height: 38px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .07); color: #e8eef5; font-size: 13px; font-weight: 700; cursor: pointer; pointer-events: auto; letter-spacing: .06em; }
 .wall-clip-btn:hover { background: rgba(255, 255, 255, .14); }
@@ -298,6 +299,8 @@ button { cursor: pointer; }
 #lookhint kbd { font-family: var(--num); font-size: 12px; background: rgba(255, 255, 255, .14); border-radius: 4px; padding: 0 5px; }
 
 @media (max-width: 720px) {
+  .navis-speed-bar { width: min(220px, calc(100vw - 32px)); }
+  .wall-clip-bar { top: calc(var(--top-bottom, 72px) + 210px); width: min(220px, calc(100vw - 32px)); }
   #credit .src, #credit .opt { display: none; }   /* 手機太窄：連結只留短名稱 */
   #credit { padding-left: 10px; padding-right: 10px; letter-spacing: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 4px; white-space: normal; }
   #credit a { white-space: nowrap; }
@@ -333,6 +336,7 @@ button { cursor: pointer; }
   #navbar .btn { padding: 0 10px; }
 }
 @media (max-height: 500px) {
+  .wall-clip-bar { left: calc(16px + min(220px, calc(100vw - 32px)) + 10px); top: calc(var(--top-bottom, 72px) + 56px); width: 120px; }
   #minimap { width: 118px; height: 118px; border-radius: 16px; }
   .move-buttons { flex-direction: row; }
   #movePanel { max-height: calc(var(--view-height, 100dvh) - var(--top-bottom, 72px) - var(--sb) - 68px); }
@@ -4848,8 +4852,8 @@ const KIT_BIM = (() => {
         keep = size.y >= 0.62 && horiz >= 0.32;
         if (!keep && size.y >= 0.95 && horiz >= 1.8 && thin <= 1.35) keep = true;
       }
-      // stairs3: fat tall shells (merged Revit wall families) stay in collidePick for
-      // Raycaster solid — AABB resolve still refuses thin>MAX_THIN (no door eject).
+      // stairs3/4: fat tall shells stay in collidePick for Raycaster; AABB skips bimRayOnly.
+      // stairs4 caps nearby ray-only count each frame (see wallsNear).
       let rayOnly = false;
       if (!keep && size.y >= 1.15 && horiz >= 2.0 && thin > 1.35 && !slabLike) {
         keep = true;
@@ -4867,20 +4871,40 @@ const KIT_BIM = (() => {
     return out.length ? out : null;
   }
 
-  /** 只對玩家附近的牆做射線，避免每幀對整棟 BIM 全掃描而卡死。 */
-  function wallsNear(_T, pick, x, z, r, extra) {
+  /** 只對玩家附近的牆做射線，避免每幀對整棟 BIM 全掃描而卡死。
+   *  stairs4: lower threshold, tighter default pad, cap expensive bimRayOnly fat shells. */
+  function wallsNear(_T, pick, x, z, r, extra, opts) {
     if (!pick || !pick.length) return pick;
-    const pad = r + (extra != null ? extra : 6.5);
-    if (pick.length <= 96) return pick;
-    const out = [];
+    opts = opts || {};
+    const pad = r + (extra != null ? extra : 4.5);
+    const force = !!opts.force || pick.length > 28;
+    if (!force && pick.length <= 28) return pick;
+    const maxRayOnly = opts.maxRayOnly != null ? opts.maxRayOnly : 8;
+    const rayPad = Math.min(pad, r + (opts.rayExtra != null ? opts.rayExtra : 3.2));
+    const thin = [];
+    const rayCand = [];
     for (let i = 0; i < pick.length; i++) {
       const o = pick[i];
-      const b = o.userData.bimXZBox;
+      const b = o.userData && o.userData.bimXZBox;
+      const isRay = !!(o.userData && o.userData.bimRayOnly);
+      const usePad = isRay ? rayPad : pad;
       if (b) {
-        if (b[1] < x - pad || b[0] > x + pad || b[3] < z - pad || b[2] > z + pad) continue;
+        if (b[1] < x - usePad || b[0] > x + usePad || b[3] < z - usePad || b[2] > z + usePad) continue;
       }
-      out.push(o);
+      if (isRay) rayCand.push(o);
+      else thin.push(o);
     }
+    // Keep nearest fat shells only (triangle cost dominates).
+    if (rayCand.length > maxRayOnly) {
+      rayCand.sort((a, b) => {
+        const ba = a.userData.bimXZBox, bb = b.userData.bimXZBox;
+        const ax = ba ? (ba[0] + ba[1]) * 0.5 : x, az = ba ? (ba[2] + ba[3]) * 0.5 : z;
+        const bx = bb ? (bb[0] + bb[1]) * 0.5 : x, bz = bb ? (bb[2] + bb[3]) * 0.5 : z;
+        return ((ax - x) * (ax - x) + (az - z) * (az - z)) - ((bx - x) * (bx - x) + (bz - z) * (bz - z));
+      });
+      rayCand.length = maxRayOnly;
+    }
+    const out = thin.concat(rayCand);
     return out.length ? out : pick;
   }
 
@@ -5348,18 +5372,23 @@ const KIT_BIM = (() => {
     return true;
   }
 
-  function bimCollide(T, pick, pos, r, feet, openings) {
+  function bimCollide(T, pick, pos, r, feet, openings, opts) {
     if (!pick || !pick.length) return false;
     if (openings && openings.length && pointInOpening(pos.x, feet + 0.88, pos.z, openings)) return false;
+    opts = opts || {};
     const ray = walkRaycaster(T);
     const dir = new T.Vector3();
     let hit = false;
-    // stairs3: denser multi-height ring so fat-shell triangle walls still catch
-    const heights = [feet + 0.35, feet + 0.55, feet + 0.95, feet + 1.35, feet + 1.65];
+    // stairs4: sparse ring (3×8) — thin AABB handles most; rays catch nearby fat shells
+    const lite = !!opts.liteRay;
+    const heights = lite
+      ? [feet + 0.55, feet + 1.15]
+      : [feet + 0.4, feet + 0.95, feet + 1.55];
+    const nAng = lite ? 6 : 8;
     for (let hi = 0; hi < heights.length; hi++) {
       const y = heights[hi];
-      for (let i = 0; i < 16; i++) {
-        const ang = (i / 16) * Math.PI * 2;
+      for (let i = 0; i < nAng; i++) {
+        const ang = (i / nAng) * Math.PI * 2 + (lite ? 0.18 : 0);
         const dx = Math.cos(ang);
         const dz = Math.sin(ang);
         _walkRayO.set(pos.x, y, pos.z);
@@ -5398,6 +5427,7 @@ const KIT_BIM = (() => {
     opts = opts || {};
     // Default ON: ring AABB/ray push prevents embedding when only a forward ray would miss.
     const doRing = opts.ring !== false;
+    const lite = !!opts.liteRay;
     const openings = opts.openings || null;
     if (!pick || !pick.length) return false;
     const y = feet + 0.88;
@@ -5411,16 +5441,20 @@ const KIT_BIM = (() => {
     if (fromInGap && toInGap) return false;
     if (move > 1e-5) {
       const ray = walkRaycaster(T);
-      // stairs3: multi-height + lateral offsets; Raycaster is authoritative for fat shells
-      const heights = [feet + 0.35, feet + 0.55, feet + 0.95, feet + 1.35, feet + 1.65];
+      // stairs4: fewer heights / laterals; still catch fat shells without 5×3 blow-up
+      const heights = lite
+        ? [feet + 0.55, feet + 1.25]
+        : [feet + 0.4, feet + 0.95, feet + 1.55];
       const ux = dx / move, uz = dz / move;
       const px = -uz, pz = ux; // lateral perpendicular
       const lateral = r * 0.55;
-      const origins = [
-        [fromX, fromZ],
-        [fromX + px * lateral, fromZ + pz * lateral],
-        [fromX - px * lateral, fromZ - pz * lateral],
-      ];
+      const origins = lite
+        ? [[fromX, fromZ]]
+        : [
+          [fromX, fromZ],
+          [fromX + px * lateral, fromZ + pz * lateral],
+          [fromX - px * lateral, fromZ - pz * lateral],
+        ];
       outerMove:
       for (let oi = 0; oi < origins.length; oi++) {
         const ox = origins[oi][0], oz = origins[oi][1];
@@ -5447,7 +5481,7 @@ const KIT_BIM = (() => {
     // AABB circle-vs-XZ-box resolve — THIN walls only (fat shells → Raycaster above).
     hit = resolveAabbCircle(pick, pos, r, y, openings) || hit;
     if (!doRing) return hit;
-    return bimCollide(T, pick, pos, r, feet, openings) || hit;
+    return bimCollide(T, pick, pos, r, feet, openings, opts) || hit;
   }
 
   /** Circle (player) vs mesh XZ AABB push-out — simple horizontal collision.
@@ -7465,19 +7499,20 @@ const CAPSULE_BVH = (() => {
     if (bimUseCapsuleBvh()) {
       const pick = bimWallPickAt(ox, oz, ox, oz) || bimWallPickAt(nx, nz, ox, oz);
       if (pick && pick.length) {
-        const opts = bimCollideOpts();
+        const opts = bimCollideOpts({ liteRay: true });
         CAPSULE_BVH.collideCapsuleMove(
           P, bimPlayerRadius() + 0.08, bimCapsuleHeight(),
           { dx: ddx, dz: ddz },
           pick,
           {
-            iterations: 6,
+            iterations: 4,
             horizontalOnly: true,
             openings: opts.openings,
             pointInOpening: (typeof KIT_BIM !== 'undefined' && KIT_BIM.pointInOpening) ? KIT_BIM.pointInOpening : null,
           },
         );
-        bimPlayerCollide(ox, oz);
+        // Lite Raycaster+AABB gate for bimRayOnly fat shells (Capsule excludes them).
+        bimPlayerCollide(ox, oz, true);
         return;
       }
     }
@@ -8923,25 +8958,36 @@ const CAPSULE_BVH = (() => {
     let pick = L.collidePick || L.wallPick;
     if (!pick || !pick.length) return null;
     const r = bimPlayerRadius();
-    let extra = 8.5;
-    if (fromX != null && fromZ != null) extra += Math.hypot(x - fromX, z - fromZ) + 2.5;
-    if (KIT_BIM.wallsNear && pick.length > 40) pick = KIT_BIM.wallsNear(THREE, pick, x, z, r, extra);
+    // stairs4: tighter near-filter — fat bimRayOnly meshes dominate ray cost
+    let extra = 4.8;
+    if (fromX != null && fromZ != null) extra += Math.min(3.5, Math.hypot(x - fromX, z - fromZ) + 1.2);
+    if (KIT_BIM.wallsNear) {
+      pick = KIT_BIM.wallsNear(THREE, pick, x, z, r, extra, { force: true, maxRayOnly: 8, rayExtra: 3.0 });
+    }
     bimCollidePickCache = { tick: bimCollideTick, pick };
     return pick;
   }
-  function bimCollideOpts() {
+  function bimCollideOpts(extra) {
     const c = (window.__kitScene && window.__kitScene.collision) || {};
     // Default ring ON so Raycaster + AABB push keep the avatar out of walls.
-    const ring = c.ringCollide !== false;
+    let ring = c.ringCollide !== false;
     const L = window.__bimLoaded;
     const openings = L && L.collisionOpenings && L.collisionOpenings.length ? L.collisionOpenings : null;
-    return { ring, openings };
+    const opts = { ring, openings };
+    // stairs4: after Capsule BVH slide, use sparse ray gate (fat shells only) — no full 5×16 ring.
+    if (extra && extra.liteRay) {
+      opts.liteRay = true;
+      opts.ring = false;
+    } else if (extra && extra.ring === false) {
+      opts.ring = false;
+    }
+    return opts;
   }
-  function bimPlayerCollide(fromX, fromZ) {
+  function bimPlayerCollide(fromX, fromZ, lite) {
     const L = window.__bimLoaded;
     if (!L || L.noWallCollide || typeof KIT_BIM === 'undefined') return false;
     if (bimSoftPassWalls()) return false;
-    const opts = bimCollideOpts();
+    const opts = bimCollideOpts(lite ? { liteRay: true } : null);
     const feetY = P.y + 0.88;
     const fx = fromX != null ? fromX : P.x;
     const fz = fromZ != null ? fromZ : P.z;
@@ -8959,7 +9005,7 @@ const CAPSULE_BVH = (() => {
       return KIT_BIM.bimCollideMove(THREE, pick, P, r, P.y, fromX, fromZ, opts);
     }
     if (!KIT_BIM.bimCollide) return false;
-    return KIT_BIM.bimCollide(THREE, pick, P, r, P.y, opts.openings);
+    return KIT_BIM.bimCollide(THREE, pick, P, r, P.y, opts.openings, opts);
   }
   function startBimNavGridIfNeeded() {
     const cfg = window.__kitScene;
