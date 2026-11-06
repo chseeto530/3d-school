@@ -6277,8 +6277,8 @@ const KIT_BIM = (() => {
  * 第三人稱步行：相機朝向移動、平滑轉身／鏡頭（供 campus-3d-v2 BIM 步行）。 */
 const THIRD_PERSON_WALK = (() => {
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  // UI 1×–5× gears: stepped multipliers on base walk (literal 1–5 was far too fast on BIM campus).
-  const NAVIS_GEAR_MUL = { 1: 0.32, 2: 0.48, 3: 0.66, 4: 0.88, 5: 1.15 };
+  // UI 1×–5× keep relative 1:2:3:4:5; base ≈45% of prior 1× (~1.1 m/s) for careful campus viewing.
+  const NAVIS_GEAR_MUL = { 1: 0.144, 2: 0.288, 3: 0.432, 4: 0.576, 5: 0.72 };
 
   function expK(dt, rate) {
     return 1 - Math.exp(-Math.max(0, dt || 0) * rate);
