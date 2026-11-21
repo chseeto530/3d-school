@@ -4,181 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="icon" href="data:," />
-  <title>BIM Islands — 題目挑戰</title>
+  <title>BIM 群島探索遊戲</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #0a1628;
-      font-family: "Noto Sans TC", "PingFang HK", "Microsoft JhengHei",
-                   "Helvetica Neue", Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    #canvas-wrap {
-      position: fixed;
-      inset: 0;
-      background: #0a1628;
-    }
-    canvas { display: block; width: 100%; height: 100%; }
-
-    /* HUD hint — white text */
-    #hint {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
+      background: #071422;
       color: #f5f7fa;
-      font-size: 13px;
-      letter-spacing: 0.04em;
-      opacity: 0.78;
-      pointer-events: none;
-      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
-      white-space: normal;
-      text-align: center;
-      max-width: min(520px, calc(100vw - 40px));
-      line-height: 1.55;
-      user-select: none;
-    }
-
-    /* Dark glass popup — white titles & body */
-    #popup {
-      position: fixed;
-      top: 48px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-12px);
-      z-index: 20;
-      width: min(420px, calc(100vw - 32px));
-      padding: 22px 24px 20px;
-      border-radius: 14px;
-      background: rgba(12, 22, 40, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
-      pointer-events: none;
-    }
-    #popup.open {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(-50%) translateY(0);
-      pointer-events: auto;
-    }
-    #popup::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 18px;
-      right: 18px;
-      height: 3px;
-      border-radius: 0 0 3px 3px;
-      background: var(--accent, #4ecdc4);
-    }
-    #popup .close {
-      position: absolute;
-      top: 12px;
-      right: 14px;
-      width: 28px;
-      height: 28px;
-      border: none;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #f5f7fa;
-      font-size: 18px;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s;
-    }
-    #popup .close:hover {
-      background: rgba(255, 255, 255, 0.16);
-    }
-    #popup h2 {
-      color: #ffffff;
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      margin: 0 28px 12px 0;
-      line-height: 1.35;
-    }
-    #popup p {
-      color: #f5f7fa;
-      font-size: 14px;
-      line-height: 1.7;
-      margin: 0;
-      opacity: 0.92;
-    }
-
-    #popup.accent-a { --accent: #4ecdc4; }
-    #popup.accent-b { --accent: #f0a04b; }
-    #popup.accent-t { --accent: #f5c542; }
-      #hint { bottom: 118px; }
-    #nav {
-      position: fixed;
-      left: 50%;
-      bottom: 16px;
-      transform: translateX(-50%);
-      z-index: 15;
-      width: min(640px, calc(100vw - 20px));
-      padding: 10px 12px 12px;
-      border-radius: 14px;
-      background: rgba(12, 22, 40, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-      color: #f5f7fa;
+      font-family: "PingFang HK", "Noto Sans TC", "Microsoft JhengHei",
+        "WenQuanYi Micro Hei", "Droid Sans Fallback", "Helvetica Neue", Arial, sans-serif;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: manipulation;
+      -webkit-font-smoothing: antialiased;
     }
-    #nav-name {
-      text-align: center;
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffffff;
-      margin-bottom: 8px;
-      letter-spacing: 0.03em;
-    }
-    #nav-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
-    #nav button {
-      min-width: 34px;
-      height: 34px;
-      padding: 0 8px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 9px;
-      background: rgba(255, 255, 255, 0.06);
-      color: #f5f7fa;
-      font-size: 14px;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    #nav button:hover { background: rgba(255, 255, 255, 0.14); }
-    #nav button.active {
-      background: rgba(78, 205, 196, 0.28);
-      border-color: #4ecdc4;
-      color: #ffffff;
-      font-weight: 600;
-    }
-    #nav button.arrow { font-size: 16px; }
+    #view { position: fixed; inset: 0; }
+    #view canvas { display: block; width: 100%; height: 100%; }
 
-    /* ---- isl3 HUD / quiz / 本機排行 (DOM only, no 3D text) ---- */
     #hud {
       position: fixed;
       top: 8px;
@@ -186,1496 +30,1233 @@
       right: 8px;
       z-index: 18;
       display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
+      gap: 6px;
       pointer-events: none;
     }
-    #hud > * { pointer-events: auto; }
-    .hud-glass {
-      background: rgba(12, 22, 40, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      border-radius: 12px;
-      color: #f5f7fa;
-      font-family: inherit;
-    }
-    #hud-name {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-    }
-    #hud-name label {
-      font-size: 12px;
-      opacity: 0.8;
-      white-space: nowrap;
-    }
-    #hud-name input {
-      width: 7.5em;
-      max-width: 28vw;
-      height: 28px;
-      padding: 0 8px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-    }
-    #hud-name input:focus { border-color: #4ecdc4; }
-    #hud-score {
-      margin-left: auto;
+    .pill {
+      background: rgba(12, 22, 40, 0.86);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
       padding: 6px 12px;
       font-size: 13px;
-      font-variant-numeric: tabular-nums;
+      font-weight: 650;
       letter-spacing: 0.02em;
-      white-space: nowrap;
+      line-height: 1.35;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
     }
-    #hud-score b { color: #4ecdc4; font-weight: 600; }
-    #btn-board {
-      height: 32px;
-      padding: 0 12px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(255, 255, 255, 0.08);
-      color: #f5f7fa;
-      font-size: 13px;
-      font-family: inherit;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    #btn-board:hover { background: rgba(255, 255, 255, 0.14); }
-    #nav-head {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    #nav-name { margin-bottom: 0; }
-    #btn-quiz {
-      height: 32px;
-      padding: 0 14px;
-      border: 1px solid #4ecdc4;
-      border-radius: 9px;
-      background: rgba(78, 205, 196, 0.28);
-      color: #ffffff;
-      font-size: 14px;
-      font-family: inherit;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-    }
-    #btn-quiz:hover { background: rgba(78, 205, 196, 0.42); }
-    #btn-quiz.done {
-      border-color: rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.1);
-      font-weight: 600;
-    }
+    #hud-title { color: #9ff6ee; }
 
-    #quiz, #board {
+    #hint {
       position: fixed;
-      left: 50%;
-      transform: translateX(-50%) translateY(-10px);
-      z-index: 26;
-      width: min(440px, calc(100vw - 20px));
-      max-height: calc(100dvh - 108px - 148px);
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 20px 20px 18px;
-      border-radius: 14px;
-      background: rgba(12, 22, 40, 0.9);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      left: 132px;
+      right: 12px;
+      bottom: 22px;
+      z-index: 12;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.45;
       color: #f5f7fa;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
       pointer-events: none;
     }
-    #quiz { top: 100px; --accent: #4ecdc4; }
-    #board { top: 100px; z-index: 28; --accent: #f0a04b; }
-    #quiz.open, #board.open {
+
+    #joy {
+      position: fixed;
+      left: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      z-index: 16;
+      background: rgba(10, 20, 36, 0.42);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      touch-action: none;
+    }
+    #joy-knob {
+      position: absolute;
+      left: 36px;
+      top: 36px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(78, 214, 204, 0.92);
+      box-shadow: 0 0 16px rgba(78, 214, 204, 0.45);
+    }
+
+    #quiz, #done {
+      position: fixed;
+      left: 50%;
+      top: 108px;
+      transform: translateX(-50%) translateY(-8px);
+      z-index: 26;
+      width: min(460px, calc(100vw - 20px));
+      max-height: calc(100dvh - 150px);
+      overflow: auto;
+      padding: 18px 16px 16px;
+      border-radius: 14px;
+      background: rgba(12, 22, 40, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    #quiz.open, #done.open {
       opacity: 1;
       visibility: visible;
       transform: translateX(-50%) translateY(0);
       pointer-events: auto;
     }
-    #quiz::before, #board::before {
+    #quiz::before, #done::before {
       content: "";
       position: absolute;
-      top: 0; left: 18px; right: 18px;
+      top: 0; left: 16px; right: 16px;
       height: 3px;
       border-radius: 0 0 3px 3px;
-      background: var(--accent, #4ecdc4);
+      background: #4ecdc4;
     }
-    #quiz .close, #board .close {
-      position: absolute;
-      top: 10px; right: 12px;
-      width: 28px; height: 28px;
-      border: none; border-radius: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #f5f7fa;
-      font-size: 18px; line-height: 1;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    #quiz h2, #board h2 {
-      color: #ffffff;
-      font-size: 17px;
-      font-weight: 600;
-      margin: 0 28px 4px 0;
-      line-height: 1.35;
-    }
-    #quiz .theme {
-      color: #4ecdc4;
+    #done::before { background: #f5c542; }
+    .theme {
+      color: #7ef0ea;
       font-size: 12px;
+      font-weight: 700;
       letter-spacing: 0.06em;
-      margin: 0 0 8px;
-      font-weight: 600;
+      margin: 0 32px 6px 0;
     }
-    #quiz .blurb, #board .note {
-      color: #f5f7fa;
-      font-size: 13px;
-      line-height: 1.65;
-      opacity: 0.88;
-      margin: 0 0 12px;
+    #quiz h2, #done h2 {
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.45;
+      margin: 0 32px 12px 0;
     }
-    #quiz .prompt {
-      color: #ffffff;
-      font-size: 15px;
-      font-weight: 600;
-      line-height: 1.55;
-      margin: 0 0 10px;
+    #done p { color: #f5f7fa; font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+    .x, #done-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 32px; height: 32px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
     }
-    #quiz .choices { display: flex; flex-direction: column; gap: 7px; }
-    #quiz .choices button {
+    #done-close {
+      position: static;
+      width: auto;
+      height: 36px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .choices { display: flex; flex-direction: column; gap: 8px; }
+    .choices button {
       text-align: left;
       width: 100%;
-      padding: 9px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(255, 255, 255, 0.06);
-      color: #f5f7fa;
-      font-size: 13.5px;
-      line-height: 1.5;
-      font-family: inherit;
-      cursor: pointer;
-    }
-    #quiz .choices button:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.12);
-    }
-    #quiz .choices button .tag {
-      display: inline-block;
-      width: 1.4em;
-      font-weight: 700;
-      color: #4ecdc4;
-    }
-    #quiz .choices button.correct {
-      border-color: #4ecdc4;
-      background: rgba(78, 205, 196, 0.22);
-    }
-    #quiz .choices button.wrong {
-      border-color: #e07a7a;
-      background: rgba(224, 122, 122, 0.18);
-    }
-    #quiz .feedback {
-      display: none;
-      margin-top: 12px;
+      min-height: 46px;
       padding: 10px 12px;
       border-radius: 10px;
-      font-size: 13.5px;
-      line-height: 1.65;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: #f5f7fa;
+      font: inherit;
+      font-size: 15px;
+      line-height: 1.45;
+      cursor: pointer;
     }
-    #quiz .feedback.show { display: block; }
-    #quiz .feedback.ok {
-      background: rgba(78, 205, 196, 0.16);
-      border: 1px solid rgba(78, 205, 196, 0.45);
+    .choices button:active { background: rgba(255, 255, 255, 0.14); }
+    .choices button.bad {
+      border-color: #ff5c6a;
+      background: rgba(160, 32, 48, 0.45);
     }
-    #quiz .feedback.bad {
-      background: rgba(224, 122, 122, 0.14);
-      border: 1px solid rgba(224, 122, 122, 0.4);
-    }
-    #quiz .summary {
-      display: none;
-      margin-top: 10px;
-      font-size: 14px;
-      line-height: 1.7;
-    }
-    #quiz .summary.show { display: block; }
-    #quiz .next-hint {
-      display: none;
-      margin-top: 8px;
-      font-size: 12px;
-      opacity: 0.75;
-    }
-    #quiz .next-hint.show { display: block; }
-    #board table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    #board th, #board td {
-      text-align: left;
-      padding: 7px 4px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    #board th { color: rgba(245, 247, 250, 0.7); font-weight: 600; font-size: 11px; letter-spacing: 0.04em; }
-    #board td.num, #board th.num { text-align: right; }
-    #board .empty { opacity: 0.7; font-size: 13px; padding: 8px 0; }
-    #popup { top: 100px; }
 
-    @media (max-width: 480px) {
-      #hud { top: 6px; left: 6px; right: 6px; gap: 5px; }
-      #hud-name { padding: 4px 8px; }
-      #hud-name input { width: 5.8em; max-width: 26vw; height: 26px; }
-      #hud-score { font-size: 11px; padding: 6px 6px; margin-left: auto; }
-      #btn-board { height: 30px; padding: 0 8px; font-size: 12px; flex-shrink: 0; }
-      #quiz, #board, #popup { top: 52px; max-height: calc(100dvh - 52px - 156px); }
-      #hint { bottom: 148px; }
-      #btn-quiz { height: 30px; padding: 0 10px; font-size: 13px; }
+    #warn {
+      position: fixed;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      max-width: calc(100vw - 24px);
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: rgba(92, 12, 24, 0.94);
+      border: 1px solid #ff5a6a;
+      color: #ffe4e8;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s linear;
     }
-    @media (max-width: 480px) {
-      #nav button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 13px; }
-      #hint { bottom: 132px; font-size: 12px; }
-      #popup { top: 16px; }
+    #warn.show { opacity: 1; }
+    #flash {
+      position: fixed;
+      inset: 0;
+      z-index: 24;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 0 rgba(255, 30, 50, 0);
+      transition: box-shadow 0.08s linear;
     }
+    #flash.show { box-shadow: inset 0 0 90px 28px rgba(255, 32, 54, 0.62); }
   </style>
+  <script>console.info('isl4');</script>
 </head>
 <body>
-  <div id="canvas-wrap"></div>
-  <div id="hint"></div>
-
-  <div id="hud">
-    <div id="hud-name" class="hud-glass">
-      <label for="player-name">名稱</label>
-      <input id="player-name" type="text" maxlength="12" placeholder="輸入名稱" autocomplete="off" enterkeyhint="done" />
-    </div>
-    <div id="hud-score" class="hud-glass">分數 <b id="score-val">0</b>/100 · 已完成 <b id="done-val">0</b>/10</div>
-    <button type="button" id="btn-board" class="hud-glass" aria-label="本機排行">本機排行</button>
-  </div>
-  <div id="quiz" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
-    <button class="close" type="button" aria-label="關閉">×</button>
-    <h2 id="quiz-title"></h2>
-    <div class="theme" id="quiz-theme"></div>
-    <p class="blurb" id="quiz-blurb"></p>
-    <p class="prompt" id="quiz-prompt"></p>
+  <div id="view"></div>
+  <header id="hud">
+    <div class="pill" id="hud-title">BIM 群島探索遊戲</div>
+    <div class="pill" id="hud-count">已組裝 0/10</div>
+    <div class="pill" id="hud-next">島 1 · 原本 BIM 島</div>
+  </header>
+  <p id="hint">WASD 或左下搖桿移動，拖曳畫面轉向。走到解鎖島上的 BIM 藍圖。</p>
+  <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
+  <div id="flash"></div>
+  <div id="warn" role="alert">答錯了，請再試一次</div>
+  <div id="quiz" role="dialog" aria-modal="true">
+    <button type="button" class="x" id="quiz-x" aria-label="關閉">×</button>
+    <p class="theme" id="quiz-theme"></p>
+    <h2 id="quiz-q"></h2>
     <div class="choices" id="quiz-choices"></div>
-    <div class="feedback" id="quiz-feedback"></div>
-    <div class="next-hint" id="quiz-next"></div>
-    <div class="summary" id="quiz-summary"></div>
   </div>
-  <div id="board" role="dialog" aria-modal="true" aria-labelledby="board-title">
-    <button class="close" type="button" aria-label="關閉">×</button>
-    <h2 id="board-title">本機排行</h2>
-    <p class="note">只限呢部裝置（同一瀏覽器的 localStorage），唔會上網同步。</p>
-    <div id="board-body"></div>
-  </div>
-  <div id="popup" role="dialog" aria-modal="true" aria-labelledby="popup-title">
-    <button class="close" type="button" aria-label="關閉">×</button>
-    <h2 id="popup-title"></h2>
-    <p id="popup-body"></p>
-  </div>
-  <div id="nav">
-    <div id="nav-head">
-      <div id="nav-name" >島嶼 1</div>
-      <button type="button" id="btn-quiz">題目</button>
-    </div>
-    <div id="nav-row">
-      <button class="arrow" id="prev" type="button" aria-label="上一個島">‹</button>
-      <span id="nav-nums" style="display:contents"></span>
-      <button class="arrow" id="next" type="button" aria-label="下一個島">›</button>
-    </div>
+  <div id="done" role="dialog" aria-modal="true">
+    <h2>組裝完成</h2>
+    <p>十件構件已在主島中央組裝完成。</p>
+    <button type="button" id="done-close">關閉</button>
   </div>
 
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
     }
   }
   </script>
   <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import * as THREE from 'three';
 
-    console.info('isl3');
-
-    // Island 1 copy — unchanged from original
-    const COPY = {
-      A: {
-        title: 'MEP 碰撞檢測',
-        body: '施工前用 BIM 三維模型，自動檢查機電管線同結構、建築有冇撞位。提早搵到交叉、淨高唔夠或安裝位唔夠，減少現場返工同延誤，跨專業協調更快更準。',
-        accent: '#4ecdc4',
-      },
-      B: {
-        title: '施工模擬／4D',
-        body: '把 3D 模型同工期計劃一齊播，預先睇清工序銜接、吊運路徑同資源點擺。早發現時序衝突同安全隱患，計劃更穩，跨專業溝通同決策都更清楚。',
-        accent: '#f0a04b',
-      },
-      T: {
-        title: '你找到了 BIM 機電零件！',
-        body: '你找到了 BIM 機電零件！',
-        accent: '#f5c542',
-      },
-    };
-    const HINT_1 = '撳建築睇引言・撳金色「題」柱或下面「題目」掣作答（每島一題，答對 10 分）。鍵盤 Q 都開得到。';
-    const HINT_N = '撳建築睇引言・撳金色「題」柱或「題目」掣作答・答完會自動飛去下一島';
-
-    // =====================================================================
-    // QUIZ + ISLAND COPY  (from island-quiz-popup-copy.md; 引言易換)
-    // User rule: 每島 1 題（題 N-1），答對 +10，滿分 100。
-    // 作答後顯示答對／答錯文案，再自動飛去下一島並打開該島題目；第 10 島後顯示總結＋本機排行。
-    // 畫面作答前唔顯示官方答案標記。排行榜只存 localStorage。
-    // =====================================================================
-    const QUIZ = [
-  {
-    "id": 1,
-    "copyName": "原本 BIM 島",
-    "theme": "BIM 基礎",
-    "intro": "BIM 用帶資料嘅三維模型，把建築、結構、機電資訊集中管理，由設計、施工用到營運。唔只睇外形，仲可查尺寸、材料同系統，跨專業共用更清楚。",
-    "qid": "1-1",
-    "prompt": "BIM 同一般 3D 模型最主要分別係？",
-    "choices": [
-      "只係畫面更精美",
-      "模型元件帶有可查詢、可共用的工程資料",
-      "一定要用虛擬實境先叫 BIM",
-      "只可以用嚟出效果圖"
-    ],
-    "correct": 1,
-    "ok": "啱！一般 3D 模型主要表達外形；BIM 嘅元件仲帶有尺寸、材料、系統等資料，可以查詢同跨專業共用。",
-    "bad": "唔係畫面精唔精美。一般 3D 主要表達外形；BIM 嘅價值在於元件帶有可查詢、可共用嘅工程資料。"
-  },
-  {
-    "id": 2,
-    "copyName": "長脊",
-    "theme": "LOD（詳細程度）",
-    "intro": "LOD 說明模型喺某個階段應做到幾仔細、資料有幾可靠，避免過早做過細，或完工時資料唔夠。團隊先約定標準，分工、審查同交接先唔會各說各話。",
-    "qid": "2-1",
-    "prompt": "LOD 主要用來說明咩？",
-    "choices": [
-      "工地午飯時段",
-      "模型在某階段應有的詳細同可靠程度",
-      "外牆油漆顏色編號清單",
-      "員工出勤天數"
-    ],
-    "correct": 1,
-    "ok": "啱！LOD 讓各專業約定「而家呢個階段模型要做到幾細、資料可信幾高」，方便分工同交接。",
-    "bad": "LOD 唔係行政或顏色清單。佢說明模型喺某階段應有嘅詳細同可靠程度，方便分工同交接。"
-  },
-  {
-    "id": 3,
-    "copyName": "雙峰",
-    "theme": "碰撞檢測",
-    "intro": "施工前用 BIM 三維模型，自動檢查機電管線同結構、建築有冇撞位。提早搵到交叉、淨高唔夠或安裝位唔夠，減少現場返工同延誤，跨專業協調更快更準。",
-    "qid": "3-1",
-    "prompt": "碰撞檢測主要想搵出咩問題？",
-    "choices": [
-      "預算有冇超支",
-      "管線、結構或建築元件喺空間上互相干擾",
-      "工人出勤率",
-      "外牆顏色配搭"
-    ],
-    "correct": 1,
-    "ok": "啱！例如風管穿過樑、喉管撞升降機槽，都屬立體空間衝突，應喺施工前用模型及早發現。",
-    "bad": "碰撞檢測要搵嘅係空間衝突：管線、結構或建築元件互相干擾，而唔係預算、出勤或顏色問題。"
-  },
-  {
-    "id": 4,
-    "copyName": "梯田",
-    "theme": "4D 施工模擬",
-    "intro": "把 3D 模型同工期計劃一齊播，預先睇清工序銜接、吊運路徑同資源點擺。早發現時序衝突同安全隱患，計劃更穩，跨專業溝通同決策都更清楚。",
-    "qid": "4-1",
-    "prompt": "4D BIM 嘅「第 4 維」通常係指？",
-    "choices": [
-      "顏色",
-      "時間／工期",
-      "天氣",
-      "音效"
-    ],
-    "correct": 1,
-    "ok": "啱！喺三維模型之上加入時間，就可以按日或按工序「播出」施工順序。4D 嘅第 4 維係時間／工期。",
-    "bad": "4D 嘅「第 4 維」通常係指時間／工期，而唔係顏色或音效。加入時間先可以播出施工順序。"
-  },
-  {
-    "id": 5,
-    "copyName": "新月",
-    "theme": "MEP 協調",
-    "intro": "MEP 協調係將給排水、空調通風、電氣等系統，喺有限天花同豎井合理排布，並對齊建築同結構嘅淨高、檢修位同走線，避免互相卡住或壓低室內淨高。",
-    "qid": "5-1",
-    "prompt": "MEP 通常包括邊類系統？",
-    "choices": [
-      "只包括園林樹木",
-      "機電設備，例如給排水、空調通風、電氣",
-      "只包括地基樁",
-      "只包括廣告燈箱"
-    ],
-    "correct": 1,
-    "ok": "啱！MEP 係機電系統嘅統稱，例如給排水、空調通風、電氣，係建築物隱藏喺天花同豎井嘅重要部分。",
-    "bad": "MEP 通常指機電設備，例如給排水、空調通風同電氣，而唔係園林樹木、地基樁或廣告燈箱。"
-  },
-  {
-    "id": 6,
-    "copyName": "尖塔",
-    "theme": "5D 成本",
-    "intro": "5D BIM 把構件數量同單價、工料連結，模型一改就可以較快更新工程量同成本估算，方便比選方案同控制預算。數量要準，單價、計量規則同分類都要一致。",
-    "qid": "6-1",
-    "prompt": "5D BIM 通常在 4D 之上再加入邊項？",
-    "choices": [
-      "氣味",
-      "成本／工程量",
-      "衛星定位",
-      "社交媒體"
-    ],
-    "correct": 1,
-    "ok": "啱！5D 把「做幾多」（數量）同「值幾多」（單價／成本）連到模型構件上，所以喺 4D 之上再加入成本／工程量。",
-    "bad": "5D BIM 通常喺 4D 之上再加入成本／工程量，把數量同單價連到構件，而唔係氣味、定位或社交媒體。"
-  },
-  {
-    "id": 7,
-    "copyName": "平台",
-    "theme": "COBie／資產",
-    "intro": "竣工 BIM 可把設備位置、型號同保養資料交俾營運團隊。用 COBie 等格式，將模型資訊轉入設施管理系統；設計或施工階段就整理，減少竣工後補檔缺漏。",
-    "qid": "7-1",
-    "prompt": "設施管理用 BIM，最常需要邊類資料？",
-    "choices": [
-      "設備位置、型號同保養資訊",
-      "只需要概念草圖",
-      "只需要廣告短片",
-      "只需要地基開挖動畫"
-    ],
-    "correct": 0,
-    "ok": "啱！營運人員要搵到風機、水泵在邊、咩型號、何時保養，呢啲先係日常有用嘅資產資料。",
-    "bad": "設施管理最常需要嘅係設備位置、型號同保養資訊，而唔係概念草圖、廣告短片或開挖動畫。"
-  },
-  {
-    "id": 8,
-    "copyName": "環礁",
-    "theme": "永續模擬",
-    "intro": "BIM 可配合日照、能耗或材料資料，比較遮陽、朝向同系統方案，協助減少能源使用同評估環保表現。模擬結果用來輔助決策，仍要配合規範同專業判斷。",
-    "qid": "8-1",
-    "prompt": "在 BIM 做永續分析，常見用途係？",
-    "choices": [
-      "比較朝向、遮陽或系統對能耗的影響",
-      "計算廣告點擊率",
-      "取代全部現場環保檢測",
-      "自動取得綠建築證書而唔使送審"
-    ],
-    "correct": 0,
-    "ok": "啱！例如調整開窗方向或加遮陽，可喺模型上先比較邊個方案較省冷氣、採光更好，再決定點改。",
-    "bad": "永續分析常見用途係比較朝向、遮陽或系統對能耗嘅影響，而唔能取代現場檢測或自動取得證書。"
-  },
-  {
-    "id": 9,
-    "copyName": "裂崖",
-    "theme": "施工安全",
-    "intro": "喺模型預演吊運、開挖、高處作業同狹窄通道，及早識別墜樓、車輛碰撞或空間不足等風險，並規劃圍擋同動線。預演幫你睇風險，但取代唔到現場管理同訓練。",
-    "qid": "9-1",
-    "prompt": "用 BIM 做安全預演，主要想發現咩？",
-    "choices": [
-      "潛在的高處、吊運或動線衝突風險",
-      "員工午餐喜好",
-      "股票走勢",
-      "外牆廣告位置"
-    ],
-    "correct": 0,
-    "ok": "啱！例如吊臂有冇掃到鄰樓、開挖邊同行人通道會唔會交織，都可以先喺模型裏檢查出來。",
-    "bad": "安全預演主要想發現潛在嘅高處、吊運或動線衝突風險，而唔係午餐喜好、股票或廣告位置。"
-  },
-  {
-    "id": 10,
-    "copyName": "群島",
-    "theme": "CDE／協作",
-    "intro": "共同數據環境（CDE）讓各專業喺約定版本同權限下共用模型，減少檔案混亂，方便追蹤同協調變更。按約定狀態上傳並註明版本，先會用緊正確嗰一份檔。",
-    "qid": "10-1",
-    "prompt": "共同數據環境（CDE）最主要作用係？",
-    "choices": [
-      "提供約定的共用平台，管理模型版本同權限",
-      "只用來備份私人相片",
-      "取代所有專業判斷",
-      "自動審批法例"
-    ],
-    "correct": 0,
-    "ok": "啱！CDE 係團隊共用「正確嗰一份檔」嘅地方，並記錄邊個可睇、邊個可改、邊個係最新版本。",
-    "bad": "CDE 最主要係提供約定嘅共用平台，管理模型版本同權限，而唔係備份相片或自動審批法例。"
+  const QUIZ = [
+    {
+      name: '原本 BIM 島',
+      question: 'BIM 同一般 3D 模型最主要分別係？',
+      options: ['只係畫面更精美', '模型元件帶有可查詢、可共用的工程資料', '一定要用虛擬實境先叫 BIM'],
+      answer: '模型元件帶有可查詢、可共用的工程資料',
+    },
+    {
+      name: '長脊',
+      question: 'LOD 主要用來說明咩？',
+      options: ['工地午飯時段', '模型在某階段應有的詳細同可靠程度', '外牆油漆顏色編號清單'],
+      answer: '模型在某階段應有的詳細同可靠程度',
+    },
+    {
+      name: '雙峰',
+      question: '碰撞檢測主要想搵出咩問題？',
+      options: ['預算有冇超支', '管線、結構或建築元件喺空間上互相干擾', '工人出勤率'],
+      answer: '管線、結構或建築元件喺空間上互相干擾',
+    },
+    {
+      name: '梯田',
+      question: '4D BIM 嘅「第 4 維」通常係指？',
+      options: ['顏色', '時間／工期', '天氣'],
+      answer: '時間／工期',
+    },
+    {
+      name: '新月',
+      question: 'MEP 通常包括邊類系統？',
+      options: ['只包括園林樹木', '機電設備，例如給排水、空調通風、電氣', '只包括地基樁'],
+      answer: '機電設備，例如給排水、空調通風、電氣',
+    },
+    {
+      name: '尖塔',
+      question: '5D BIM 通常在 4D 之上再加入邊項？',
+      options: ['氣味', '成本／工程量', '衛星定位'],
+      answer: '成本／工程量',
+    },
+    {
+      name: '平台',
+      question: '設施管理用 BIM，最常需要邊類資料？',
+      options: ['設備位置、型號同保養資訊', '只需要概念草圖', '只需要廣告短片'],
+      answer: '設備位置、型號同保養資訊',
+    },
+    {
+      name: '環礁',
+      question: '在 BIM 做永續分析，常見用途係？',
+      options: ['比較朝向、遮陽或系統對能耗的影響', '計算廣告點擊率', '取代全部現場環保檢測'],
+      answer: '比較朝向、遮陽或系統對能耗的影響',
+    },
+    {
+      name: '裂崖',
+      question: '用 BIM 做安全預演，主要想發現咩？',
+      options: ['潛在的高處、吊運或動線衝突風險', '員工午餐喜好', '股票走勢'],
+      answer: '潛在的高處、吊運或動線衝突風險',
+    },
+    {
+      name: '群島',
+      question: '共同數據環境（CDE）最主要作用係？',
+      options: ['提供約定的共用平台，管理模型版本同權限', '只用來備份私人相片', '取代所有專業判斷'],
+      answer: '提供約定的共用平台，管理模型版本同權限',
+    },
+  ];
+  if (QUIZ.length !== 10) throw new Error('quiz');
+  for (let i = 0; i < 10; i++) {
+    if (QUIZ[i].options.length !== 3 || QUIZ[i].options.indexOf(QUIZ[i].answer) < 0) {
+      throw new Error('quiz ' + i);
+    }
   }
-];
-    const SCORE_PER = 10;
-    const SCORE_MAX = 100;
-    const LS_NAME = 'bim-island-isl3-name';
-    const LS_PROGRESS = 'bim-island-isl3-progress';
-    const LS_BOARD = 'bim-island-isl3-board';
-    const BOARD_MAX = 10;
-    let quizHudReady = false;
-    const QUIZ_ACCENT = ['#4ecdc4','#8fb0ff','#f0a04b','#8de09a','#b9a2ff','#ffe58a','#dfe8f5','#5fa060','#ff8aa0','#4f9a68'];
 
+  const MAIN_R = 30;
+  const SMALL_R = 10;
+  const ORBIT = 100;
+  const BODY = 0.42;
+  const SHIELD_R = 12.4;
+  const NEAR2 = 8.2 * 8.2;
+  const SPEED = 11;
+  const CAM_DIST = 20;
+  const CAM_SHOULDER = 3.1;
+  const CAM_AHEAD = 6.5;
+  const BG = 0x071422;
 
-    const BG = 0x0a1628;
-    const isMobile = matchMedia('(pointer: coarse)').matches || window.innerWidth < 700;
+  const PART_HEX = [0x3ecfc0, 0xf0a04b, 0x8fb0ff, 0x8de09a, 0x5ad7e5, 0xf5d76e, 0xc9b6ff, 0x5dcaa5, 0xff8b6a, 0xffc2d4];
+  const DOCK = [
+    [0, 0.28, 0],
+    [0, 4.55, -0.3],
+    [0, 2.33, -1.5],
+    [0, 0.34, 5.22],
+    [0, 2.2, 1.55],
+    [0, 5.86, -0.3],
+    [0, 4.26, -0.3],
+    [0, 4.85, -0.3],
+    [0, 1.25, -3.35],
+    [0, 4.64, 1.2],
+  ];
 
-    // --- Renderer (light: no shadows, pixelRatio ≤ 1.5) ---
-    const wrap = document.getElementById('canvas-wrap');
-    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: false, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(BG, 1);
-    renderer.shadowMap.enabled = false;
-    wrap.appendChild(renderer.domElement);
+  const hudCount = document.getElementById('hud-count');
+  const hudNext = document.getElementById('hud-next');
+  const hintEl = document.getElementById('hint');
+  const quizEl = document.getElementById('quiz');
+  const quizTheme = document.getElementById('quiz-theme');
+  const quizQ = document.getElementById('quiz-q');
+  const quizChoices = document.getElementById('quiz-choices');
+  const warnEl = document.getElementById('warn');
+  const flashEl = document.getElementById('flash');
+  const doneEl = document.getElementById('done');
+  const joyEl = document.getElementById('joy');
+  const knobEl = document.getElementById('joy-knob');
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(BG);
-    scene.fog = new THREE.FogExp2(BG, 0.011);
+  const coarse0 = matchMedia('(pointer: coarse)').matches || window.innerWidth < 820;
+  const renderer = new THREE.WebGLRenderer({
+    antialias: !coarse0,
+    alpha: false,
+    powerPreference: 'high-performance',
+    stencil: false,
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse0 ? 1.25 : 1.5));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(BG, 1);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = false;
+  document.getElementById('view').appendChild(renderer.domElement);
 
-    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 400);
-    camera.position.set(7.5, 5.2, 9.5);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(BG);
+  scene.fog = new THREE.Fog(BG, 210, 520);
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / Math.max(1, window.innerHeight), 0.12, 600);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.minDistance = 4;
-    controls.maxDistance = 42;
-    controls.maxPolarAngle = Math.PI * 0.48;
-    controls.minPolarAngle = Math.PI * 0.18;
-    controls.target.set(0, 1.2, 0);
-    controls.enablePan = false;
-    controls.update();
+  scene.add(new THREE.AmbientLight(0xc5d4ea, 0.78));
+  const sun = new THREE.DirectionalLight(0xfff3dd, 1.35);
+  sun.position.set(48, 86, 26);
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0x8fb4d8, 0.38);
+  fill.position.set(-36, 24, -18);
+  scene.add(fill);
 
-    // --- Lights ---
-    scene.add(new THREE.AmbientLight(0x6a8ab0, 0.6));
-    const sun = new THREE.DirectionalLight(0xfff2dd, 1.15);
-    sun.position.set(6, 12, 4);
-    scene.add(sun);
-    const fill = new THREE.DirectionalLight(0x4a6a9a, 0.35);
-    fill.position.set(-5, 4, -3);
-    scene.add(fill);
-    const rim = new THREE.DirectionalLight(0x3a7ca5, 0.25);
-    rim.position.set(0, 3, -8);
-    scene.add(rim);
+  const starN = 420;
+  const starArr = new Float32Array(starN * 3);
+  for (let i = 0; i < starN; i++) {
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(0.05 + Math.random() * 0.95);
+    const r = 200 + Math.random() * 90;
+    starArr[i * 3] = r * Math.sin(ph) * Math.cos(th);
+    starArr[i * 3 + 1] = Math.abs(r * Math.cos(ph)) * 0.55 + 8;
+    starArr[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starArr, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+    color: 0xd7e4ff, size: 1.15, transparent: true, opacity: 0.85, depthWrite: false, fog: false,
+  })));
 
-    // --- Stars (one draw call) ---
-    const starCount = isMobile ? 600 : 1100;
-    const starPos = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(1 - Math.random() * 1.2);
-      const r = 140 + Math.random() * 80;
-      starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      starPos[i * 3 + 1] = r * Math.cos(phi) - 10;
-      starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-    }
-    const starGeo = new THREE.BufferGeometry();
-    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
-      color: 0xdce8ff, size: 0.5, transparent: true, opacity: 0.85,
-      depthWrite: false, sizeAttenuation: true, fog: false,
-    }));
-    scene.add(stars);
+  const water = new THREE.Mesh(
+    new THREE.CircleGeometry(250, 40),
+    new THREE.MeshBasicMaterial({ color: 0x0e4a68 })
+  );
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = -2.6;
+  scene.add(water);
 
-    // --- Shared geometry ---
-    const box = new THREE.BoxGeometry(1, 1, 1);
-    const ico = new THREE.IcosahedronGeometry(1, 0);
-    const dod = new THREE.DodecahedronGeometry(1, 0);
-    const cyl8 = new THREE.CylinderGeometry(1, 1, 1, 8);
-    const cyl6 = new THREE.CylinderGeometry(1, 1, 1, 6);
+  const unitBox = new THREE.BoxGeometry(1, 1, 1);
+  const mainGeo = new THREE.CylinderGeometry(MAIN_R, 22, 8, 10);
+  const smallGeo = new THREE.CylinderGeometry(SMALL_R, 7.1, 4.6, 8);
+  const mainMat = new THREE.MeshLambertMaterial({ color: 0x2f8f72, flatShading: true });
+  const main = new THREE.Mesh(mainGeo, mainMat);
+  main.position.y = -4;
+  scene.add(main);
+  const plaza = new THREE.Mesh(
+    new THREE.CircleGeometry(7.2, 22),
+    new THREE.MeshLambertMaterial({ color: 0x4d7c86, flatShading: true })
+  );
+  plaza.rotation.x = -Math.PI / 2;
+  plaza.position.y = 0.025;
+  scene.add(plaza);
 
-    function std(color, rough = 0.92, metal = 0.05) {
-      return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, flatShading: true });
-    }
-    function mkMats(rock, dark, grass, edge) {
-      return { rock: std(rock), dark: std(dark, 0.95, 0.04), grass: std(grass, 0.85, 0.02), edge: std(edge, 0.88, 0.02) };
-    }
-    function add(parent, geo, mat, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) {
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(x, y, z);
-      m.scale.set(sx, sy, sz);
-      m.rotation.set(rx, ry, rz);
-      parent.add(m);
-      return m;
-    }
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
-    function shadowDisc(g, r, y) {
-      const s = new THREE.Mesh(new THREE.CircleGeometry(r, 24), shadowMat);
-      s.rotation.x = -Math.PI / 2;
-      s.position.y = y;
-      g.add(s);
-    }
+  const partMats = PART_HEX.map((hex) => {
+    const color = new THREE.Color(hex);
+    const emissive = color.clone().multiplyScalar(0.38);
+    return new THREE.MeshLambertMaterial({ color, emissive, flatShading: true });
+  });
 
-    const islands = []; // { group, base, name, view, bob, buildings }
-    const pickables = [];
-
-    // =====================================================================
-    // ISLAND 1 — original island, geometry/buildings/copy/treasure unchanged
-    // =====================================================================
-    const island = new THREE.Group();
-    island.name = 'island';
-    scene.add(island);
-    {
-      const M = mkMats(0x5a6578, 0x3d4656, 0x3d8b5a, 0x2f6e48);
-      add(island, box, M.rock, 0, 0.15, 0, 4.6, 1.1, 3.8, 0, 0.12, 0);
-      add(island, box, M.dark, -0.3, -0.55, 0.2, 3.8, 0.9, 3.2, 0.05, -0.2, 0.04);
-      add(island, ico, M.rock, 1.8, -0.2, -0.9, 1.4, 1.1, 1.3, 0.3, 0.5, 0.1);
-      add(island, ico, M.dark, -2.0, -0.35, 0.7, 1.5, 1.2, 1.4, 0.4, -0.8, 0.2);
-      add(island, dod, M.rock, 0.6, -0.9, 1.4, 1.3, 1.0, 1.2, 0.2, 0.9, 0.15);
-      add(island, dod, M.dark, -0.8, -1.0, -1.3, 1.4, 1.1, 1.3, 0.5, -0.4, 0.1);
-      add(island, box, M.rock, 2.2, 0.05, 0.8, 1.2, 0.8, 1.5, 0, 0.4, 0.08);
-      add(island, box, M.dark, -2.3, -0.1, -0.6, 1.1, 0.85, 1.4, 0.05, -0.35, -0.05);
-      add(island, ico, M.dark, 0.2, -1.55, 0.1, 1.8, 1.4, 1.6, 0.2, 0.3, 0);
-      add(island, dod, M.dark, -0.5, -1.85, -0.3, 1.2, 1.0, 1.1, 0.6, 1.1, 0.2);
-      const grassTop = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.5, 0.28, 8), M.grass);
-      grassTop.position.set(0.05, 0.82, 0.05);
-      grassTop.rotation.y = 0.18;
-      island.add(grassTop);
-      const grassPad = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 2.9), M.edge);
-      grassPad.position.set(-0.15, 0.78, -0.1);
-      grassPad.rotation.y = -0.08;
-      island.add(grassPad);
-      shadowDisc(island, 3.2, -2.4);
-    }
-
-    const island1Buildings = [];
-    function makeBuilding({ name, color, emissive, x, z, w, d, h, storyTint }) {
-      const group = new THREE.Group();
-      group.name = name;
-      group.userData.buildingId = name;
-      const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.18, flatShading: true }));
-      body.position.y = h / 2;
-      body.userData.buildingId = name;
-      group.add(body);
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(w * 1.08, 0.12, d * 1.08),
-        new THREE.MeshStandardMaterial({ color: storyTint, roughness: 0.5, metalness: 0.25, flatShading: true }));
-      roof.position.y = h + 0.06;
-      roof.userData.buildingId = name;
-      group.add(roof);
-      const winMat = new THREE.MeshStandardMaterial({ color: 0x0c1a2e, emissive, emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.4 });
-      const floors = Math.max(2, Math.floor(h / 0.55));
-      for (let i = 0; i < floors; i++) {
-        const wy = 0.35 + i * (h / floors);
-        for (const [ox, oz, ww, dd] of [
-          [0, d / 2 + 0.01, w * 0.72, 0.22],
-          [0, -(d / 2 + 0.01), w * 0.72, 0.22],
-          [w / 2 + 0.01, 0, 0.22, d * 0.72],
-          [-(w / 2 + 0.01), 0, 0.22, d * 0.72],
-        ]) {
-          const win = new THREE.Mesh(new THREE.BoxGeometry(ox === 0 ? ww : 0.04, 0.18, oz === 0 ? dd : 0.04), winMat);
-          win.position.set(ox, wy, oz);
-          win.userData.buildingId = name;
-          group.add(win);
-        }
-      }
-      if (h > 2.2) {
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.45, 6),
-          new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.4 }));
-        pole.position.y = h + 0.35;
-        pole.userData.buildingId = name;
-        group.add(pole);
-      }
-      group.position.set(x, 0.92, z);
-      island.add(group);
-      island1Buildings.push(group);
-      return group;
-    }
-    makeBuilding({ name: 'A', color: 0x2a9d8f, emissive: 0x3ecfc0, storyTint: 0x1a7a70, x: -1.35, z: 0.15, w: 1.05, d: 0.95, h: 2.05 });
-    makeBuilding({ name: 'B', color: 0xe08a2c, emissive: 0xf0a04b, storyTint: 0xb86a18, x: 1.25, z: -0.2, w: 1.15, d: 1.0, h: 2.55 });
-    {
-      const path = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.04, 0.45), std(0x8a9aaa, 0.9, 0));
-      path.position.set(0, 0.94, 0.55);
-      island.add(path);
-    }
-
-    // Hidden treasure (unchanged behaviour)
-    function makeTreasureGear() {
-      const g = new THREE.Group();
-      g.name = 'treasure';
-      g.userData.buildingId = 'T';
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, emissive: 0xf0a020, emissiveIntensity: 0.55, metalness: 0.85, roughness: 0.28, flatShading: true });
-      const coreMat = new THREE.MeshStandardMaterial({ color: 0xb8860b, emissive: 0xffc040, emissiveIntensity: 0.35, metalness: 0.9, roughness: 0.25 });
-      const rimM = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 8, 16), goldMat);
-      rimM.userData.buildingId = 'T'; g.add(rimM);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.06, 8), coreMat);
-      hub.rotation.x = Math.PI / 2; hub.userData.buildingId = 'T'; g.add(hub);
-      for (let i = 0; i < 6; i++) {
-        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.05, 0.04), goldMat);
-        const a = (i / 6) * Math.PI * 2;
-        tooth.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
-        tooth.rotation.z = a; tooth.userData.buildingId = 'T'; g.add(tooth);
-      }
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.14, 6), coreMat);
-      shaft.position.z = 0.08; shaft.rotation.x = Math.PI / 2; shaft.userData.buildingId = 'T'; g.add(shaft);
-      const glow = new THREE.PointLight(0xffc040, 0.65, 1.8, 2);
-      glow.position.set(0, 0.05, 0);
-      g.add(glow);
-      g.userData.glowLight = glow;
-      g.userData.goldMats = [goldMat, coreMat];
-      const spots = [
-        { x: -2.05, z: 0.85 }, { x: -1.9, z: -0.95 }, { x: 2.0, z: 0.75 }, { x: 1.95, z: -1.05 },
-        { x: -0.15, z: 1.55 }, { x: 0.35, z: -1.45 }, { x: -2.15, z: 0.05 }, { x: 2.2, z: -0.15 },
-      ];
-      const pick = spots[Math.floor(Math.random() * spots.length)];
-      g.position.set(pick.x + (Math.random() - 0.5) * 0.25, 1.02, pick.z + (Math.random() - 0.5) * 0.25);
-      g.rotation.set(0.55, Math.random() * Math.PI * 2, 0.25);
-      g.scale.setScalar(0.95 + Math.random() * 0.15);
-      island.add(g);
-      return g;
-    }
-    const treasure = makeTreasureGear();
-
-    islands.push({
-      group: island, base: new THREE.Vector3(0, 0, 0), name: '島嶼 1 · BIM 主島',
-      view: { off: new THREE.Vector3(7.5, 4.0, 9.5), ty: 1.2 },
-      bob: { amp: 0.38, spd: 0.55, ph: 0 }, original: true,
+  const ISLANDS = [];
+  for (let i = 0; i < 10; i++) {
+    const ang = -Math.PI / 2 + i * (Math.PI * 2 / 10);
+    ISLANDS.push({
+      i, ang,
+      x: Math.cos(ang) * ORBIT,
+      z: Math.sin(ang) * ORBIT,
+      unlocked: i === 0,
+      solved: false,
     });
+  }
 
-    // =====================================================================
-    // Generic buildings for islands 2–10 (light: ≤ ~7 meshes each)
-    // =====================================================================
-    const PALETTE = [
-      [0x2a9d8f, 0x3ecfc0, '#4ecdc4'], [0xe08a2c, 0xf0a04b, '#f0a04b'], [0x5b7fd6, 0x8fb0ff, '#8fb0ff'],
-      [0xc0566b, 0xff8aa0, '#ff8aa0'], [0x8a6fd1, 0xb9a2ff, '#b9a2ff'], [0x4fa35a, 0x8de09a, '#8de09a'],
-      [0xd8c25a, 0xffe58a, '#ffe58a'], [0x9aa6b8, 0xdfe8f5, '#dfe8f5'],
-    ];
-    const winGeo = box;
-    const matCache = new Map();
-    function cachedMat(key, make) { if (!matCache.has(key)) matCache.set(key, make()); return matCache.get(key); }
-    let palIdx = 0;
+  const labelFont = '"PingFang HK","Noto Sans TC","Microsoft JhengHei","WenQuanYi Micro Hei","Droid Sans Fallback",sans-serif';
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function makeLabel(n, name, hex) {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = 256;
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, 512, 256);
+    g.fillStyle = 'rgba(6, 14, 28, 0.62)';
+    roundRect(g, 24, 36, 464, 184, 28);
+    g.fill();
+    g.strokeStyle = '#' + hex.toString(16).padStart(6, '0');
+    g.lineWidth = 8;
+    g.stroke();
+    g.fillStyle = '#ffffff';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = '800 86px ' + labelFont;
+    g.fillText(String(n), 256, 98);
+    g.fillStyle = '#d9fff8';
+    g.font = '650 40px ' + labelFont;
+    g.fillText(name, 256, 162);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }));
+    s.scale.set(8.4, 4.2, 1);
+    s.renderOrder = 3;
+    return s;
+  }
 
-    function genericBuilding(rec, g, { id, label, kind = 'box', x, y, z, w = 0.9, d = 0.9, h = 1.6, ry = 0 }) {
-      const [color, emissive, accent] = PALETTE[palIdx++ % PALETTE.length];
-      const b = new THREE.Group();
-      b.userData.buildingId = id;
-      const body = cachedMat('b' + color, () => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.18, flatShading: true }));
-      const win = cachedMat('w' + emissive, () => new THREE.MeshStandardMaterial({ color: 0x0c1a2e, emissive, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.4 }));
-      const roofM = cachedMat('r', () => new THREE.MeshStandardMaterial({ color: 0x2a3446, roughness: 0.55, metalness: 0.25, flatShading: true }));
-      const floors = Math.min(4, Math.max(1, Math.floor(h / 0.6)));
-      if (kind === 'cyl') {
-        add(b, cyl8, body, 0, h / 2, 0, w / 2, h, w / 2);
-        for (let i = 0; i < floors; i++) add(b, cyl8, win, 0, 0.35 + i * (h / floors), 0, w / 2 + 0.015, 0.16, w / 2 + 0.015);
-        add(b, cyl8, roofM, 0, h + 0.05, 0, w / 2 * 1.1, 0.1, w / 2 * 1.1);
-      } else if (kind === 'dome') {
-        add(b, cyl8, body, 0, h / 2, 0, w / 2, h, w / 2);
-        add(b, cyl8, win, 0, h * 0.55, 0, w / 2 + 0.015, 0.16, w / 2 + 0.015);
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(w / 2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), roofM);
-        dome.position.y = h; b.add(dome);
-      } else if (kind === 'gable') {
-        add(b, box, body, 0, h / 2, 0, w, h, d);
-        for (let i = 0; i < floors; i++) add(b, winGeo, win, 0, 0.3 + i * (h / floors), 0, w + 0.02, 0.15, d * 0.7);
-        const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.01, w * 0.62, 0.6, 4), roofM);
-        roof.position.y = h + 0.3; roof.rotation.y = Math.PI / 4; roof.scale.z = d / w; b.add(roof);
-      } else {
-        add(b, box, body, 0, h / 2, 0, w, h, d);
-        for (let i = 0; i < floors; i++) add(b, winGeo, win, 0, 0.32 + i * (h / floors), 0, w + 0.02, 0.16, d + 0.02);
-        add(b, box, roofM, 0, h + 0.06, 0, w * 1.08, 0.12, d * 1.08);
-      }
-      b.traverse((o) => { o.userData.buildingId = id; });
-      b.position.set(x, y, z);
-      b.rotation.y = ry;
-      g.add(b);
-      COPY[id] = {
-        title: `${rec.short}｜${label}`,
-        body: `${rec.short}嘅「${label}」。呢度係佔位文字，之後可以換成正式嘅 BIM 內容。`,
-        accent,
-      };
-      return b;
-    }
-
-    // Shape builders (local coords; return list of building specs)
-    const SHAPES = {
-      ridge(g, M) {
-        add(g, box, M.rock, 0, 0.2, 0, 9.2, 1.1, 2.6, 0, 0.04, 0);
-        add(g, box, M.dark, 0.3, -0.5, 0.1, 8.0, 0.9, 2.1, 0.03, -0.05, 0);
-        for (let i = -3; i <= 3; i++) add(g, i % 2 ? ico : dod, i % 2 ? M.dark : M.rock, i * 1.3, -1.0 - Math.abs(i % 2) * 0.3, (i % 3) * 0.25, 1.2, 1.3 - Math.abs(i) * 0.08, 1.0, 0.3 * i, 0.5 * i, 0.1);
-        add(g, ico, M.dark, 0, -1.9, 0, 2.2, 1.2, 1.0, 0.1, 0.3, 0);
-        add(g, box, M.grass, 0, 0.82, 0, 8.8, 0.26, 2.2, 0, 0.04, 0);
-        shadowDisc(g, 4.2, -2.6);
-        return { top: 0.95, b: [
-          { label: '西翼樓', kind: 'box', x: -3.0, z: 0.1, w: 0.9, d: 0.9, h: 1.4 },
-          { label: '中央樓', kind: 'cyl', x: 0, z: -0.1, w: 1.0, h: 2.2 },
-          { label: '東翼樓', kind: 'gable', x: 3.0, z: 0.1, w: 1.0, d: 0.8, h: 1.1 },
-        ] };
-      },
-      twinPeak(g, M) {
-        add(g, dod, M.rock, -2.2, -0.4, 0, 2.0, 2.0, 2.0, 0.2, 0.4, 0);
-        add(g, dod, M.rock, 2.2, 0.1, 0, 2.0, 2.4, 2.0, 0.3, -0.3, 0.1);
-        add(g, ico, M.dark, -2.0, -2.2, 0.2, 1.4, 1.6, 1.4, 0.4, 0.2, 0);
-        add(g, ico, M.dark, 2.1, -2.0, -0.2, 1.4, 2.0, 1.4, 0.1, 0.8, 0);
-        add(g, box, M.dark, 0, -0.6, 0, 2.6, 0.9, 1.6, 0, 0.1, 0.05);
-        add(g, cyl8, M.grass, -2.2, 1.18, 0, 1.55, 0.26, 1.55, 0, 0.2, 0);
-        add(g, cyl8, M.grass, 2.2, 2.08, 0, 1.55, 0.26, 1.55, 0, 0.5, 0);
-        add(g, box, std(0x8a9aaa, 0.9, 0), 0, 1.0, 0, 2.6, 0.08, 0.5, 0, 0, -0.33);
-        shadowDisc(g, 4, -3.2);
-        return { b: [
-          { label: '左峰館', kind: 'gable', x: -2.2, y: 1.31, z: 0, w: 1.1, d: 0.9, h: 1.2 },
-          { label: '右峰塔', kind: 'cyl', x: 2.2, y: 2.21, z: 0, w: 0.8, h: 2.2 },
-        ] };
-      },
-      terraced(g, M) {
-        add(g, cyl8, M.rock, 0, 0.1, 0, 3.4, 1.2, 3.4, 0, 0.1, 0);
-        add(g, new THREE.CylinderGeometry(1, 0.2, 1, 8), M.dark, 0, -1.9, 0, 3.1, 3.2, 3.1, 0, 0.3, 0);
-        add(g, cyl8, M.grass, 0, 0.8, 0, 3.45, 0.22, 3.45, 0, 0.1, 0);
-        add(g, cyl8, M.rock, 0, 1.2, 0, 2.3, 0.7, 2.3, 0, 0.45, 0);
-        add(g, cyl8, M.grass, 0, 1.6, 0, 2.35, 0.2, 2.35, 0, 0.45, 0);
-        add(g, cyl8, M.rock, 0, 1.95, 0, 1.25, 0.6, 1.25, 0, 0.2, 0);
-        add(g, cyl8, M.grass, 0, 2.3, 0, 1.3, 0.2, 1.3, 0, 0.2, 0);
-        shadowDisc(g, 3.6, -3.2);
-        return { b: [
-          { label: '下層屋', kind: 'box', x: 2.75, y: 0.91, z: 0.6, w: 0.7, d: 0.7, h: 0.9 },
-          { label: '下層倉', kind: 'gable', x: -2.6, y: 0.91, z: -1.0, w: 0.8, d: 0.6, h: 0.8 },
-          { label: '中層樓', kind: 'box', x: -0.6, y: 1.7, z: 1.6, w: 0.8, d: 0.6, h: 1.1 },
-          { label: '頂層塔', kind: 'dome', x: 0, y: 2.4, z: 0, w: 0.9, h: 1.3 },
-        ] };
-      },
-      crescent(g, M) {
-        const pts = [];
-        for (let i = 0; i < 7; i++) {
-          const a = -2.0 + (i / 6) * 4.0;
-          const x = Math.cos(a) * 3.4, z = Math.sin(a) * 3.4;
-          const s = 1.0 + Math.sin((i / 6) * Math.PI) * 0.45;
-          add(g, i % 2 ? ico : dod, i % 2 ? M.dark : M.rock, x, -0.2, z, 1.25 * s, 1.1 * s, 1.25 * s, i, i * 0.7, 0.1);
-          add(g, ico, M.dark, x * 0.9, -1.3 * s, z * 0.9, 0.9 * s, 1.2 * s, 0.9 * s, i * 0.4, i, 0);
-          add(g, cyl8, M.grass, x, 0.72 + (s - 1) * 0.6, z, 1.05 * s, 0.24, 1.05 * s, 0, a, 0);
-          pts.push([x, 0.84 + (s - 1) * 0.6, z, a]);
-        }
-        shadowDisc(g, 4, -2.6);
-        return { b: [
-          { label: '北端屋', kind: 'gable', x: pts[1][0], y: pts[1][1], z: pts[1][2], w: 0.8, d: 0.7, h: 1.0, ry: -pts[1][3] },
-          { label: '中段樓', kind: 'box', x: pts[3][0], y: pts[3][1], z: pts[3][2], w: 1.0, d: 0.9, h: 1.9, ry: -pts[3][3] },
-          { label: '南端塔', kind: 'cyl', x: pts[5][0], y: pts[5][1], z: pts[5][2], w: 0.8, h: 1.5 },
-        ] };
-      },
-      spire(g, M) {
-        add(g, new THREE.CylinderGeometry(1.0, 0.18, 1, 7), M.rock, 0, -2.6, 0, 1.6, 7.2, 1.6, 0, 0.3, 0);
-        add(g, ico, M.dark, 0.5, -1.0, 0.3, 1.1, 1.4, 1.0, 0.3, 0.5, 0);
-        add(g, ico, M.dark, -0.6, -2.4, -0.2, 0.8, 1.5, 0.8, 0.5, 0.1, 0);
-        add(g, dod, M.rock, 0.2, -4.2, 0.1, 0.6, 1.3, 0.6, 0.2, 0.9, 0);
-        add(g, cyl8, M.grass, 0, 1.05, 0, 1.75, 0.24, 1.75, 0, 0.2, 0);
-        shadowDisc(g, 2, -6.8);
-        return { b: [
-          { label: '尖塔', kind: 'cyl', x: 0, y: 1.17, z: 0, w: 0.8, h: 2.8 },
-          { label: '觀景亭', kind: 'dome', x: 1.0, y: 1.17, z: 0.7, w: 0.6, h: 0.5 },
-        ] };
-      },
-      flat(g, M) {
-        add(g, cyl6, M.rock, 0, 0.35, 0, 5.4, 0.55, 5.4, 0, 0, 0);
-        add(g, cyl6, M.dark, 0, -0.05, 0, 4.6, 0.4, 4.6, 0, 0.5, 0);
-        for (let i = 0; i < 6; i++) { const a = i * 1.05; add(g, dod, M.dark, Math.cos(a) * 2.6, -0.45, Math.sin(a) * 2.6, 1.2, 0.5, 1.2, 0.2, a, 0); }
-        add(g, dod, M.dark, 0, -0.6, 0, 2.2, 0.7, 2.2, 0, 0.3, 0);
-        add(g, cyl6, M.grass, 0, 0.7, 0, 5.2, 0.18, 5.2, 0, 0, 0);
-        shadowDisc(g, 5, -1.6);
-        return { top: 0.79, b: [
-          { label: '一號廠房', kind: 'box', x: -2.2, z: -1.0, w: 1.8, d: 1.1, h: 0.8 },
-          { label: '二號廠房', kind: 'box', x: 1.8, z: -1.6, w: 1.4, d: 1.4, h: 0.7 },
-          { label: '控制室', kind: 'dome', x: 0.2, z: 1.6, w: 1.0, h: 0.6 },
-          { label: '倉庫', kind: 'gable', x: 2.6, z: 1.2, w: 1.2, d: 0.9, h: 0.6 },
-        ] };
-      },
-      atoll(g, M) {
-        const n = 12;
-        for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2;
-          const x = Math.cos(a) * 3.6, z = Math.sin(a) * 3.6;
-          add(g, i % 2 ? ico : dod, i % 2 ? M.dark : M.rock, x, -0.15, z, 1.1, 1.0, 1.1, i, a, 0);
-          add(g, cyl8, M.grass, x, 0.62, z, 1.0, 0.22, 1.0, 0, a, 0);
-        }
-        add(g, dod, M.dark, 0, -1.6, 0, 3.0, 1.4, 3.0, 0.1, 0.2, 0);
-        add(g, ico, M.dark, 0, -2.8, 0, 1.6, 1.4, 1.6, 0.3, 0.6, 0);
-        const lagoon = new THREE.Mesh(new THREE.CircleGeometry(3.1, 24),
-          new THREE.MeshStandardMaterial({ color: 0x1f6f9a, emissive: 0x0d3550, emissiveIntensity: 0.6, roughness: 0.2, metalness: 0.3 }));
-        lagoon.rotation.x = -Math.PI / 2; lagoon.position.y = 0.3; g.add(lagoon);
-        shadowDisc(g, 4.4, -3.8);
-        const at = (i) => { const a = (i / n) * Math.PI * 2; return [Math.cos(a) * 3.6, 0.73, Math.sin(a) * 3.6]; };
-        return { b: [
-          { label: '環礁北屋', kind: 'gable', x: at(3)[0], y: 0.73, z: at(3)[2], w: 0.8, d: 0.7, h: 0.9 },
-          { label: '環礁東樓', kind: 'box', x: at(0)[0], y: 0.73, z: at(0)[2], w: 0.8, d: 0.8, h: 1.5 },
-          { label: '環礁西塔', kind: 'cyl', x: at(7)[0], y: 0.73, z: at(7)[2], w: 0.7, h: 1.9 },
-        ] };
-      },
-      split(g, M) {
-        const L = new THREE.Group(), R = new THREE.Group();
-        g.add(L, R);
-        add(L, box, M.rock, -1.9, 0.1, 0, 3.0, 1.4, 3.8, 0, 0.05, 0.03);
-        add(L, ico, M.dark, -2.0, -1.2, 0.3, 1.6, 1.6, 1.8, 0.3, 0.3, 0);
-        add(L, dod, M.dark, -1.7, -2.3, -0.3, 1.0, 1.2, 1.1, 0.4, 0.2, 0);
-        add(L, box, M.grass, -1.9, 0.9, 0, 2.95, 0.22, 3.75, 0, 0.05, 0.03);
-        add(R, box, M.rock, 1.9, -0.25, 0.1, 2.8, 1.6, 3.4, 0, -0.08, -0.04);
-        add(R, ico, M.dark, 2.0, -1.6, 0, 1.5, 1.8, 1.6, 0.2, 0.9, 0);
-        add(R, dod, M.dark, 1.8, -2.9, 0.2, 0.9, 1.1, 0.9, 0.5, 0.1, 0);
-        add(R, box, M.grass, 1.9, 0.62, 0.1, 2.75, 0.22, 3.35, 0, -0.08, -0.04);
-        add(g, box, std(0x8a9aaa, 0.9, 0), 0, 0.82, 0.2, 1.6, 0.08, 0.6, 0, 0, -0.18);
-        shadowDisc(g, 3.8, -3.4);
-        return { b: [
-          { label: '西崖樓', kind: 'box', x: -2.2, y: 1.01, z: -0.5, w: 1.1, d: 1.0, h: 2.0 },
-          { label: '西崖屋', kind: 'gable', x: -1.9, y: 1.01, z: 1.2, w: 0.8, d: 0.7, h: 0.8 },
-          { label: '東崖塔', kind: 'cyl', x: 2.0, y: 0.73, z: 0.0, w: 0.9, h: 1.6 },
-        ] };
-      },
-      cluster(g, M) {
-        add(g, dod, M.rock, 0, -0.3, 0, 2.4, 1.5, 2.4, 0.1, 0.3, 0);
-        add(g, ico, M.dark, 0, -1.8, 0, 1.6, 1.6, 1.6, 0.3, 0.2, 0);
-        add(g, cyl8, M.grass, 0, 0.9, 0, 2.2, 0.24, 2.2, 0, 0.3, 0);
-        const sats = [];
-        for (const [sx, sy, sz, r] of [[4.2, 1.8, -1.6, 1.2], [-3.8, -0.9, 2.0, 1.35], [0.8, 3.0, 3.6, 0.9]]) {
-          const s = new THREE.Group();
-          s.position.set(sx, sy, sz);
-          add(s, dod, M.rock, 0, -0.3, 0, r, r * 0.8, r, 0.2, sx, 0);
-          add(s, ico, M.dark, 0, -1.0 * r, 0, r * 0.65, r * 0.9, r * 0.65, 0.3, sz, 0);
-          add(s, cyl8, M.grass, 0, 0.32, 0, r * 0.95, 0.2, r * 0.95, 0, 0, 0);
-          s.userData.sat = { ph: sx, base: sy };
-          g.add(s);
-          sats.push(s);
-        }
-        g.userData.sats = sats;
-        shadowDisc(g, 3, -3.2);
-        return { b: [
-          { label: '主樓', kind: 'box', x: -0.3, y: 1.02, z: 0.2, w: 1.1, d: 1.0, h: 2.1 },
-          { label: '副樓', kind: 'gable', x: 1.0, y: 1.02, z: -0.9, w: 0.8, d: 0.7, h: 0.9 },
-          { label: '東衛星屋', kind: 'dome', parent: 0, x: 0, y: 0.42, z: 0, w: 0.8, h: 0.6 },
-          { label: '西衛星樓', kind: 'cyl', parent: 1, x: 0, y: 0.42, z: 0, w: 0.7, h: 1.3 },
-          { label: '高空小屋', kind: 'box', parent: 2, x: 0, y: 0.42, z: 0, w: 0.6, d: 0.6, h: 0.6 },
-        ] };
-      },
-    };
-
-    const DEFS = [
-      { shape: 'ridge',    name: '長脊島', pos: [24, 3, -8],   tint: [0x8a7560, 0x5e4f40, 0x6a9a4a, 0x557d3a], dist: 13 },
-      { shape: 'twinPeak', name: '雙峰島', pos: [42, -2, 8],   tint: [0x55607a, 0x394258, 0x3d8b6a, 0x2f6e55], dist: 13 },
-      { shape: 'terraced', name: '梯田島', pos: [30, 4, 30],   tint: [0x7a5a52, 0x553e39, 0x5aa04f, 0x47823f], dist: 12 },
-      { shape: 'crescent', name: '新月島', pos: [6, -3, 34],   tint: [0x6a5f80, 0x463f58, 0x4f9a70, 0x3d7a58], dist: 13 },
-      { shape: 'spire',    name: '尖塔島', pos: [-16, 5, 22],  tint: [0x3f4550, 0x2a2f38, 0x4a9a62, 0x3a7a4e], dist: 12, ty: 0.5 },
-      { shape: 'flat',     name: '平台島', pos: [-32, -1, 4],  tint: [0x8a929e, 0x636a75, 0x6fae5c, 0x5a8f4a], dist: 14 },
-      { shape: 'atoll',    name: '環礁島', pos: [-26, 4, -20], tint: [0x9a8a70, 0x6e624f, 0x5fa060, 0x4c824d], dist: 13 },
-      { shape: 'split',    name: '裂崖島', pos: [-6, -2, -32], tint: [0x8a6e45, 0x5f4b2f, 0x5c9a48, 0x4a7d3a], dist: 12 },
-      { shape: 'cluster',  name: '群島',   pos: [18, 6, -30],  tint: [0x4f6f70, 0x354c4d, 0x4f9a68, 0x3e7c53], dist: 14 },
-    ];
-
-    DEFS.forEach((def, i) => {
-      const n = i + 2;
-      const g = new THREE.Group();
-      g.name = 'island' + n;
-      g.position.set(...def.pos);
-      scene.add(g);
-      const rec = {
-        group: g, base: new THREE.Vector3(...def.pos), name: `島嶼 ${n} · ${def.name}`, short: `島嶼 ${n}`,
-        view: { off: new THREE.Vector3(0.62, 0.42, 0.78).normalize().multiplyScalar(def.dist), ty: def.ty ?? 1.2 },
-        bob: { amp: 0.18 + (i % 3) * 0.08, spd: 0.4 + (i % 4) * 0.09, ph: i * 1.7 },
-      };
-      const M = mkMats(...def.tint);
-      const res = SHAPES[def.shape](g, M);
-      res.b.forEach((spec, k) => {
-        const parent = spec.parent != null ? g.userData.sats[spec.parent] : g;
-        genericBuilding(rec, parent, { ...spec, id: `${n}-${k + 1}`, y: spec.y ?? res.top ?? 0.92 });
-      });
-      g.userData.islandIndex = islands.length;
-      islands.push(rec);
+  const crystalGeo = new THREE.ConeGeometry(0.72, 2.5, 5);
+  for (let i = 0; i < 10; i++) {
+    const isl = ISLANDS[i];
+    const top = new THREE.MeshLambertMaterial({
+      color: new THREE.Color().setHSL(0.40 + i * 0.045, 0.46, 0.36),
+      flatShading: true,
     });
-    island.userData.islandIndex = 0;
+    const mesh = new THREE.Mesh(smallGeo, top);
+    mesh.position.set(isl.x, -2.3, isl.z);
+    scene.add(mesh);
+    const label = makeLabel(i + 1, QUIZ[i].name, PART_HEX[i]);
+    label.position.set(isl.x, 6.4, isl.z);
+    scene.add(label);
+    const ca = isl.ang + (i === 2 ? 0.85 : 0.7);
+    const crystal = new THREE.Mesh(i === 1 ? unitBox : crystalGeo, partMats[i]);
+    crystal.position.set(isl.x + Math.cos(ca) * 6.3, 1.2, isl.z + Math.sin(ca) * 6.3);
+    if (i === 1) crystal.scale.set(1.1, 0.55, 3.6);
+    else crystal.scale.y = 0.75 + (i % 4) * 0.28;
+    crystal.rotation.y = isl.ang;
+    scene.add(crystal);
+    if (i === 2) {
+      const c2 = new THREE.Mesh(crystalGeo, partMats[i]);
+      const a2 = isl.ang - 0.85;
+      c2.position.set(isl.x + Math.cos(a2) * 6.2, 1.85, isl.z + Math.sin(a2) * 6.2);
+      c2.scale.y = 1.45;
+      scene.add(c2);
+    }
+  }
 
+  const domeGeo = new THREE.SphereGeometry(11.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+  const domeMat = new THREE.MeshBasicMaterial({
+    color: 0xff2d3a, transparent: true, opacity: 0.4, depthWrite: false, fog: false,
+  });
+  const shieldRingGeo = new THREE.TorusGeometry(11.35, 0.26, 5, 22);
+  const shieldRingMat = new THREE.MeshBasicMaterial({
+    color: 0xff4d58, transparent: true, opacity: 0.95, depthWrite: false, fog: false,
+  });
+  const shields = new Array(10).fill(null);
+  const fading = [];
+  for (let i = 1; i < 10; i++) {
+    const g = new THREE.Group();
+    const dome = new THREE.Mesh(domeGeo, domeMat);
+    dome.renderOrder = 1;
+    const ring = new THREE.Mesh(shieldRingGeo, shieldRingMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.22;
+    ring.renderOrder = 1;
+    g.add(dome, ring);
+    g.position.set(ISLANDS[i].x, 0.05, ISLANDS[i].z);
+    g.userData.k = 1;
+    scene.add(g);
+    shields[i] = g;
+  }
+  function dismissShield(i) {
+    const s = shields[i];
+    if (!s || s.userData.bye) return;
+    s.userData.bye = true;
+    fading.push(s);
+  }
 
-    // Quiz podium /「題」marker (shared geo + mats, no lights, no shadows)
-    const quizPodiumGeo = new THREE.CylinderGeometry(0.28, 0.34, 0.16, 8);
-    const quizPoleGeo = new THREE.CylinderGeometry(0.045, 0.05, 0.7, 6);
-    const quizGemGeo = new THREE.OctahedronGeometry(0.2, 0);
-    const quizPodiumMat = new THREE.MeshStandardMaterial({ color: 0x2a3446, roughness: 0.5, metalness: 0.25, flatShading: true });
-    const quizPoleMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.4, metalness: 0.6, flatShading: true });
-    const quizGemMat = new THREE.MeshStandardMaterial({ color: 0xffe58a, emissive: 0xf0a020, emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.45, flatShading: true });
-    const quizSignTex = (() => {
-      const c = document.createElement('canvas');
-      c.width = 128; c.height = 128;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 128, 128);
-      ctx.fillStyle = 'rgba(12,22,40,0.9)';
-      ctx.beginPath(); ctx.arc(64, 64, 58, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#f0a020'; ctx.lineWidth = 6; ctx.stroke();
-      ctx.fillStyle = '#ffe58a';
-      ctx.font = 'bold 72px "Noto Sans TC","PingFang HK","Microsoft JhengHei",sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('題', 64, 70);
-      const t = new THREE.CanvasTexture(c);
-      t.colorSpace = THREE.SRGBColorSpace;
-      return t;
-    })();
-    const quizSignMat = new THREE.MeshBasicMaterial({ map: quizSignTex, transparent: true, depthWrite: false });
-    const quizSignGeo = new THREE.PlaneGeometry(0.55, 0.55);
-    // local offsets: clear of buildings as much as practical
-    const QUIZ_POS = [
-      [0.05, 0.94, 1.82],
-      [0.0, 0.95, 1.25],
-      [0.0, 1.35, 1.55],
-      [2.0, 0.91, -0.2],
-      [0.0, 1.15, 0.15],
-      [-1.15, 1.17, 0.15],
-      [-0.6, 0.79, 0.15],
-      [0.0, 0.45, 0.0],
-      [0.15, 0.85, 0.0],
-      [1.45, 1.02, 1.15],
-    ];
-    const quizMarkers = [];
-    islands.forEach((rec, i) => {
-      const [x, y, z] = QUIZ_POS[i];
-      const g = new THREE.Group();
-      g.name = 'quizMarker';
-      g.userData.quizIsland = i;
-      const pod = new THREE.Mesh(quizPodiumGeo, quizPodiumMat);
-      pod.position.y = 0.08; pod.userData.quizIsland = i; g.add(pod);
-      const pole = new THREE.Mesh(quizPoleGeo, quizPoleMat);
-      pole.position.y = 0.48; pole.userData.quizIsland = i; g.add(pole);
-      const gem = new THREE.Mesh(quizGemGeo, quizGemMat);
-      gem.position.y = 0.95; gem.userData.quizIsland = i; g.add(gem);
-      const sign = new THREE.Mesh(quizSignGeo, quizSignMat);
-      sign.position.set(0, 1.28, 0); sign.userData.quizIsland = i; g.add(sign);
-      const sign2 = sign.clone(); sign2.rotation.y = Math.PI; sign2.userData.quizIsland = i; g.add(sign2);
-      g.position.set(x, y, z);
-      rec.group.add(g);
-      rec.quizMarker = g;
-      quizMarkers.push(g);
+  const bridgeGeo = new THREE.BoxGeometry(3.5, 0.16, 66);
+  const bridgeMat = new THREE.MeshLambertMaterial({ color: 0xbaf7ef, emissive: 0x146860, flatShading: true });
+  const bridges = [];
+  for (let i = 0; i < 10; i++) {
+    const b = new THREE.Mesh(bridgeGeo, bridgeMat);
+    const ang = ISLANDS[i].ang;
+    b.position.set(Math.cos(ang) * 60, 0.1, Math.sin(ang) * 60);
+    b.rotation.y = Math.PI / 2 - ang;
+    b.userData.g = i === 0 ? 1 : 0;
+    b.scale.z = i === 0 ? 1 : 0.02;
+    b.visible = i === 0;
+    scene.add(b);
+    bridges.push(b);
+  }
+
+  function onBridge(x, z, ang) {
+    const ux = Math.cos(ang);
+    const uz = Math.sin(ang);
+    const radial = x * ux + z * uz;
+    const side = x * (-uz) + z * ux;
+    return radial >= 26.2 && radial <= 93.8 && side <= 1.65 && side >= -1.65;
+  }
+  function shieldBlocks(x, z) {
+    for (let i = 0; i < 10; i++) {
+      if (ISLANDS[i].unlocked) continue;
+      const dx = x - ISLANDS[i].x;
+      const dz = z - ISLANDS[i].z;
+      if (dx * dx + dz * dz < SHIELD_R * SHIELD_R) return true;
+    }
+    return false;
+  }
+  function canWalk(x, z) {
+    if (shieldBlocks(x, z)) return false;
+    const lim = MAIN_R - BODY;
+    if (x * x + z * z <= lim * lim) return true;
+    const slim = SMALL_R - BODY;
+    for (let i = 0; i < 10; i++) {
+      if (!ISLANDS[i].unlocked) continue;
+      const dx = x - ISLANDS[i].x;
+      const dz = z - ISLANDS[i].z;
+      if (dx * dx + dz * dz <= slim * slim) return true;
+      if (onBridge(x, z, ISLANDS[i].ang)) return true;
+    }
+    return false;
+  }
+  for (let z = 20; z >= -100; z -= 1) {
+    if (!canWalk(0, z)) throw new Error('path ' + z);
+  }
+  if (canWalk(ISLANDS[1].x, ISLANDS[1].z)) throw new Error('lock');
+  if (canWalk(40, -60)) throw new Error('water');
+
+  const boy = new THREE.Group();
+  const skin = new THREE.MeshLambertMaterial({ color: 0xf2c7a2 });
+  const shirt = new THREE.MeshLambertMaterial({ color: 0x2ed0c4 });
+  const pants = new THREE.MeshLambertMaterial({ color: 0x243246 });
+  const hairM = new THREE.MeshLambertMaterial({ color: 0x241c18 });
+  const shoeM = new THREE.MeshLambertMaterial({ color: 0x161616 });
+  const eyeM = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+  const legGeo = new THREE.BoxGeometry(0.2, 0.48, 0.22);
+  const shoeGeo = new THREE.BoxGeometry(0.22, 0.1, 0.3);
+  const armGeo = new THREE.BoxGeometry(0.16, 0.46, 0.16);
+  function addLeg(x) {
+    const p = new THREE.Group();
+    p.position.set(x, 0.56, 0);
+    const leg = new THREE.Mesh(legGeo, pants);
+    leg.position.y = -0.24;
+    const shoe = new THREE.Mesh(shoeGeo, shoeM);
+    shoe.position.set(0, -0.5, 0.04);
+    p.add(leg, shoe);
+    boy.add(p);
+    return p;
+  }
+  function addArm(x) {
+    const p = new THREE.Group();
+    p.position.set(x, 1.28, 0);
+    const arm = new THREE.Mesh(armGeo, shirt);
+    arm.position.y = -0.23;
+    p.add(arm);
+    boy.add(p);
+    return p;
+  }
+  const legL = addLeg(-0.14);
+  const legR = addLeg(0.14);
+  const armL = addArm(-0.4);
+  const armR = addArm(0.4);
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.42, 2, 8), shirt);
+  body.position.y = 1.02;
+  boy.add(body);
+  const pack = new THREE.Mesh(unitBox, pants);
+  pack.scale.set(0.36, 0.4, 0.16);
+  pack.position.set(0, 1.12, -0.28);
+  boy.add(pack);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.23, 8, 6), skin);
+  head.position.y = 1.62;
+  boy.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), hairM);
+  hair.scale.y = 0.62;
+  hair.position.y = 1.76;
+  boy.add(hair);
+  const eyeGeo = new THREE.SphereGeometry(0.035, 6, 4);
+  const eyeL = new THREE.Mesh(eyeGeo, eyeM);
+  const eyeR = new THREE.Mesh(eyeGeo, eyeM);
+  eyeL.position.set(-0.08, 1.64, 0.2);
+  eyeR.position.set(0.08, 1.64, 0.2);
+  boy.add(eyeL, eyeR);
+  const blob = new THREE.Mesh(
+    new THREE.CircleGeometry(0.46, 10),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false })
+  );
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.04;
+  boy.add(blob);
+  boy.scale.setScalar(1.35);
+  boy.position.set(0, 0, 20);
+  boy.rotation.y = Math.PI;
+  scene.add(boy);
+
+  function makePrintTex() {
+    const c = document.createElement('canvas');
+    c.width = 320;
+    c.height = 200;
+    const g = c.getContext('2d');
+    g.fillStyle = '#04252c';
+    g.fillRect(0, 0, 320, 200);
+    g.strokeStyle = '#8ff6ee';
+    g.lineWidth = 8;
+    g.strokeRect(12, 12, 296, 176);
+    g.strokeStyle = '#1d6f76';
+    g.lineWidth = 2;
+    for (let i = 1; i <= 4; i++) {
+      g.beginPath();
+      g.moveTo(28, 24 + i * 30);
+      g.lineTo(292, 24 + i * 30);
+      g.stroke();
+    }
+    g.fillStyle = '#f3fffd';
+    g.font = '700 44px ' + labelFont;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('BIM 藍圖', 160, 100);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+  const blueprint = new THREE.Group();
+  const stand = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.1, 1.45, 6),
+    new THREE.MeshLambertMaterial({ color: 0x08343a })
+  );
+  stand.position.y = 0.72;
+  const board = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.7, 1.75),
+    new THREE.MeshBasicMaterial({ map: makePrintTex(), fog: false })
+  );
+  board.position.y = 1.9;
+  const backplate = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.86, 1.9),
+    new THREE.MeshBasicMaterial({ color: 0x063840, fog: false })
+  );
+  backplate.position.set(0, 1.9, -0.04);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0x7ef6ff, transparent: true, opacity: 0.32, depthWrite: false,
+    blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+  });
+  const glowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 2.25), glowMat);
+  glowPlane.position.set(0, 1.9, -0.08);
+  const beaconMat = new THREE.MeshBasicMaterial({
+    color: 0x8af7ff, transparent: true, opacity: 0.22, depthWrite: false,
+    blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+  });
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 1.15, 8, 8, 1, true), beaconMat);
+  beacon.position.y = 4.1;
+  const hit = new THREE.Mesh(
+    new THREE.PlaneGeometry(5.6, 3.6),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, fog: false })
+  );
+  hit.position.set(0, 1.9, 0.25);
+  blueprint.add(stand, backplate, glowPlane, board, beacon, hit);
+  scene.add(blueprint);
+
+  const arrowMat = new THREE.MeshBasicMaterial({ color: 0xffe033, fog: false });
+  const arrow = new THREE.Group();
+  const arrowHead = new THREE.Mesh(new THREE.ConeGeometry(2.6, 6.4, 8), arrowMat);
+  arrowHead.rotation.x = Math.PI;
+  arrowHead.position.y = -2.4;
+  const arrowShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 4.4, 6), arrowMat);
+  arrowShaft.position.y = 2.6;
+  arrow.add(arrowHead, arrowShaft);
+  arrow.visible = false;
+  arrow.renderOrder = 4;
+  scene.add(arrow);
+  const flightPole = new THREE.Mesh(
+    new THREE.BoxGeometry(0.45, 1, 0.45),
+    new THREE.MeshBasicMaterial({ color: 0xb6fff6, fog: false })
+  );
+  flightPole.visible = false;
+  scene.add(flightPole);
+
+  function addBox(group, mat, w, h, d, x, y, z) {
+    const m = new THREE.Mesh(unitBox, mat);
+    m.scale.set(w, h, d);
+    m.position.set(x, y, z);
+    group.add(m);
+  }
+  const parts = [];
+  for (let i = 0; i < 10; i++) {
+    const g = new THREE.Group();
+    const mat = partMats[i];
+    if (i === 0) addBox(g, mat, 9.2, 0.5, 7.2, 0, 0, 0);
+    else if (i === 1) addBox(g, mat, 8.6, 0.32, 0.44, 0, 0, 0);
+    else if (i === 2) {
+      addBox(g, mat, 0.58, 3.6, 0.58, -3.2, 0, 0);
+      addBox(g, mat, 0.58, 3.6, 0.58, 3.2, 0, 0);
+    } else if (i === 3) {
+      addBox(g, mat, 6.4, 0.28, 1.2, 0, -0.18, -1.02);
+      addBox(g, mat, 4.6, 0.28, 1.05, 0, 0, 0.03);
+      addBox(g, mat, 3.0, 0.28, 0.9, 0, 0.18, 0.98);
+    } else if (i === 4) {
+      const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 6.6, 8), mat);
+      duct.rotation.z = Math.PI / 2;
+      g.add(duct);
+    } else if (i === 5) g.add(new THREE.Mesh(new THREE.ConeGeometry(0.95, 2.3, 8), mat));
+    else if (i === 6) addBox(g, mat, 7.4, 0.26, 4.6, 0, 0, 0);
+    else if (i === 7) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.13, 6, 16), mat);
+      ring.rotation.x = Math.PI / 2;
+      g.add(ring);
+    } else if (i === 8) addBox(g, mat, 8.8, 1.4, 0.22, 0, 0, 0);
+    else {
+      addBox(g, mat, 0.55, 0.55, 0.55, -0.8, 0, -0.35);
+      addBox(g, mat, 0.5, 0.7, 0.5, 0.75, 0.1, -0.1);
+      addBox(g, mat, 0.48, 0.48, 0.48, 0.05, 0.05, 0.45);
+      addBox(g, mat, 0.42, 0.85, 0.42, -0.5, 0.16, 0.42);
+      addBox(g, mat, 0.52, 0.52, 0.52, 0.85, 0, 0.48);
+    }
+    g.position.set(DOCK[i][0], DOCK[i][1], DOCK[i][2]);
+    g.visible = false;
+    scene.add(g);
+    parts.push(g);
+  }
+
+  const tweens = [];
+  function launchPart(i) {
+    const m = parts[i];
+    const isl = ISLANDS[i];
+    m.visible = true;
+    m.position.set(isl.x, 3.2, isl.z);
+    m.scale.set(0.78, 0.78, 0.78);
+    tweens.push({
+      mesh: m,
+      sx: isl.x, sy: 3.2, sz: isl.z,
+      ex: DOCK[i][0], ey: DOCK[i][1], ez: DOCK[i][2],
+      t: 0, dur: 2.35,
     });
-
-    // Freeze static matrices inside islands (only group transforms animate)
-    for (const rec of islands) {
-      rec.group.traverse((o) => { if (o !== rec.group && !(o.userData && o.userData.sat) && o.name !== 'treasure' && o.name !== 'quizMarker' && o.userData.quizIsland == null && !island1Buildings.includes(o)) { o.updateMatrix(); o.matrixAutoUpdate = false; } });
-      pickables.push(rec.group);
-    }
-
-    // --- Popup ---
-    const popupEl = document.getElementById('popup');
-    const titleEl = document.getElementById('popup-title');
-    const bodyEl = document.getElementById('popup-body');
-    const closeBtn = popupEl.querySelector('.close');
-    function islandIndexForBuilding(id) {
-      if (id === 'A' || id === 'B' || id === 'T') return 0;
-      const m = String(id || '').match(/^(\d+)-/);
-      return m ? (parseInt(m[1], 10) - 1) : null;
-    }
-    function showPopup(id) {
-      if (id === 'T') {
-        const c = COPY.T;
-        titleEl.textContent = c.title;
-        bodyEl.textContent = c.body;
-        popupEl.style.setProperty('--accent', c.accent);
-        popupEl.classList.remove('accent-a', 'accent-b', 'accent-t');
-        popupEl.classList.add('accent-t', 'open');
-        return;
+  }
+  function tickTweens(dt) {
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const tw = tweens[i];
+      tw.t += dt;
+      let u = tw.t / tw.dur;
+      if (u > 1) u = 1;
+      const e = u * u * (3 - 2 * u);
+      const arc = Math.sin(Math.PI * u) * 22;
+      const m = tw.mesh;
+      m.position.x = tw.sx + (tw.ex - tw.sx) * e;
+      m.position.y = tw.sy + (tw.ey - tw.sy) * e + arc;
+      m.position.z = tw.sz + (tw.ez - tw.sz) * e;
+      const sc = 0.78 + 0.22 * e;
+      m.scale.set(sc, sc, sc);
+      m.rotation.x = (1 - e) * 0.55;
+      m.rotation.z = (1 - e) * 0.35;
+      flightPole.visible = true;
+      flightPole.position.set(m.position.x, m.position.y * 0.5, m.position.z);
+      flightPole.scale.set(1, Math.max(0.3, m.position.y), 1);
+      if (u >= 1) {
+        m.position.set(tw.ex, tw.ey, tw.ez);
+        m.scale.set(1, 1, 1);
+        m.rotation.set(0, 0, 0);
+        tweens.splice(i, 1);
+        if (tweens.length === 0) flightPole.visible = false;
       }
-      const idx = islandIndexForBuilding(id);
-      const meta = idx != null ? QUIZ[idx] : null;
-      if (!meta) {
-        const c = COPY[id];
-        if (!c) return;
-        titleEl.textContent = c.title;
-        bodyEl.textContent = c.body;
-        popupEl.style.setProperty('--accent', c.accent);
-        popupEl.classList.add('open');
-        return;
-      }
-      // 引言（內容設計師文案；之後可只改 QUIZ[i].intro）
-      titleEl.textContent = islands[idx].name + ' — ' + meta.theme;
-      bodyEl.textContent = meta.intro;
-      popupEl.style.setProperty('--accent', QUIZ_ACCENT[idx]);
-      popupEl.classList.remove('accent-a', 'accent-b', 'accent-t');
-      popupEl.classList.add('open');
     }
-    function hidePopup() { popupEl.classList.remove('open'); }
-    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); hidePopup(); });
-    window.addEventListener('keydown', (e) => {
-      const typing = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
-      if (e.key === 'Escape') { hidePopup(); hideQuiz(); hideBoard(); }
-      if (typing) return;
-      if (e.key === 'ArrowRight') go(current + 1);
-      if (e.key === 'ArrowLeft') go(current - 1);
-      if (e.key === 'q' || e.key === 'Q') openQuiz(current);
-    });
+  }
 
-    // --- Navigation ---
-    const hintEl = document.getElementById('hint');
-    const nameEl = document.getElementById('nav-name');
-    const numsEl = document.getElementById('nav-nums');
-    const numBtns = islands.map((rec, i) => {
+  let active = 0;
+  let solvedN = 0;
+  let quizOpen = false;
+  let pendingDone = false;
+  let doneShown = false;
+  let nearBlueprint = false;
+  let time = 0;
+  let walk = 0;
+  let shakeT = 0;
+  let warnUntil = 0;
+  let yaw = 0;
+  let pitch = 0.7;
+  let joyX = 0;
+  let joyY = 0;
+  let fx = 0;
+  let fz = -1;
+  let rx = 1;
+  let rz = 0;
+  let wantX = 0;
+  let wantY = 8;
+  let wantZ = 30;
+  let wantLX = 0;
+  let wantLY = 1.6;
+  let wantLZ = 14;
+  let cineX = 0;
+  let cineY = 40;
+  let cineZ = 0;
+  let cineLX = 0;
+  let cineLY = 4;
+  let cineLZ = 0;
+  let cineT = 0;
+  let hintMode = '';
+  let state = '';
+  const down = Object.create(null);
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  const proj = new THREE.Vector3();
+
+  function placeBlueprint(i) {
+    const isl = ISLANDS[i];
+    blueprint.position.set(isl.x, 0, isl.z);
+    blueprint.rotation.set(0, Math.atan2(-isl.x, -isl.z), 0);
+    blueprint.visible = true;
+  }
+  function showArrow(i) {
+    arrow.position.x = ISLANDS[i].x;
+    arrow.position.z = ISLANDS[i].z;
+    arrow.visible = true;
+  }
+  function updateHud() {
+    hudCount.textContent = '已組裝 ' + solvedN + '/10';
+    if (solvedN >= 10) hudNext.textContent = '主島組合完成';
+    else hudNext.textContent = '島 ' + (active + 1) + ' · ' + QUIZ[active].name;
+  }
+  function setHint(s) {
+    if (s === hintMode) return;
+    hintMode = s;
+    hintEl.textContent = s;
+  }
+  function setState(s) {
+    if (s === state) return;
+    state = s;
+    document.body.dataset.isl = s;
+  }
+  function showDone() {
+    if (doneShown) return;
+    doneShown = true;
+    doneEl.classList.add('open');
+  }
+  let aimIsland = -1;
+  function startCine(from, next) {
+    const a0 = ISLANDS[from].ang;
+    const a1 = next >= 0 ? ISLANDS[next].ang : a0 + 0.5;
+    const mid = (a0 + a1) * 0.5;
+    const dist = 132;
+    cineX = Math.cos(mid) * dist + Math.cos(mid + Math.PI / 2) * 28;
+    cineY = 42;
+    cineZ = Math.sin(mid) * dist + Math.sin(mid + Math.PI / 2) * 28;
+    cineLX = Math.cos(a0) * 36;
+    cineLY = 12;
+    cineLZ = Math.sin(a0) * 36;
+    cineT = 3.15;
+    aimIsland = next;
+    if (camera.fov !== 70) {
+      camera.fov = 70;
+      camera.updateProjectionMatrix();
+    }
+  }
+  function onCorrect() {
+    const i = active;
+    if (i < 0 || i > 9 || ISLANDS[i].solved) return;
+    ISLANDS[i].solved = true;
+    solvedN += 1;
+    dismissShield(i);
+    launchPart(i);
+    const next = i + 1;
+    if (next < 10) {
+      ISLANDS[next].unlocked = true;
+      dismissShield(next);
+      showArrow(next);
+      placeBlueprint(next);
+      active = next;
+      startCine(i, next);
+    } else {
+      blueprint.visible = false;
+      arrow.visible = false;
+      active = -1;
+      pendingDone = true;
+      startCine(i, -1);
+    }
+    updateHud();
+  }
+  function openQuiz() {
+    const q = QUIZ[active];
+    quizTheme.textContent = '島 ' + (active + 1) + ' · ' + q.name;
+    quizQ.textContent = q.question;
+    quizChoices.replaceChildren();
+    for (let i = 0; i < 3; i++) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.textContent = String(i + 1);
-      b.setAttribute('aria-label', rec.name);
-      b.addEventListener('click', () => go(i));
-      numsEl.appendChild(b);
-      return b;
-    });
-    document.getElementById('prev').addEventListener('click', () => go(current - 1));
-    document.getElementById('next').addEventListener('click', () => go(current + 1));
-
-    let current = 0;
-    let fly = null;
-    function updateUi() {
-      numBtns.forEach((b, i) => b.classList.toggle('active', i === current));
-      nameEl.textContent = islands[current].name;
-      hintEl.textContent = current === 0 ? HINT_1 : HINT_N;
-      if (typeof refreshHud === 'function') refreshHud();
+      b.textContent = q.options[i];
+      const opt = q.options[i];
+      b.addEventListener('click', () => choose(opt, b));
+      quizChoices.appendChild(b);
     }
-    function go(i) {
-      const n = islands.length;
-      i = ((i % n) + n) % n;
-      current = i;
-      hidePopup();
-      if (!pendingQuizAfterFly) hideQuiz();
-      updateUi();
-      const rec = islands[i];
-      const toTarget = rec.base.clone().add(new THREE.Vector3(0, rec.view.ty, 0));
-      // keep the current viewing direction if reasonable, else default offset
-      const toPos = toTarget.clone().add(rec.view.off.clone().multiplyScalar(fitFactor()));
-      fly = {
-        t0: performance.now(), dur: 1400,
-        fromPos: camera.position.clone(), fromTgt: controls.target.clone(),
-        toPos, toTgt: toTarget,
-        lift: Math.min(8, camera.position.distanceTo(toPos) * 0.15),
-      };
-      controls.enabled = false;
-    }
-    function fitFactor() {
-      const a = window.innerWidth / window.innerHeight;
-      return a >= 1 ? 1 : Math.min(2.2, Math.max(1, 1.2 / a));
-    }
-    // initial framing of island 1 (wider on portrait phones)
-    camera.position.copy(controls.target).add(islands[0].view.off.clone().multiplyScalar(fitFactor()));
-    controls.update();
-    const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
-
-    // --- Raycasting (tap, not drag) ---
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let pointerDown = null;
-    function setPointer(event) {
-      const rect = renderer.domElement.getBoundingClientRect();
-      const cx = event.clientX ?? (event.touches && event.touches[0]?.clientX);
-      const cy = event.clientY ?? (event.touches && event.touches[0]?.clientY);
-      if (cx == null) return false;
-      pointer.x = ((cx - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((cy - rect.top) / rect.height) * 2 + 1;
-      return true;
-    }
-    function pick() {
-      raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObjects(pickables, true);
-      for (const h of hits) {
-        if (h.object.material === shadowMat) continue;
-        let o = h.object, bid = null, idx = null;
-        let qid = null;
-        while (o) {
-          if (bid == null && o.userData && o.userData.buildingId) bid = o.userData.buildingId;
-          if (qid == null && o.userData && o.userData.quizIsland != null) qid = o.userData.quizIsland;
-          if (o.userData && o.userData.islandIndex != null) { idx = o.userData.islandIndex; break; }
-          o = o.parent;
-        }
-        if (idx != null) return { bid, idx, qid };
-      }
-      return null;
-    }
-    renderer.domElement.addEventListener('pointerdown', (e) => {
-      if (!setPointer(e)) return;
-      pointerDown = { x: pointer.x, y: pointer.y, t: performance.now() };
-    });
-    renderer.domElement.addEventListener('pointerup', (e) => {
-      if (!pointerDown) return;
-      if (!setPointer(e)) { pointerDown = null; return; }
-      const moved = Math.hypot(pointer.x - pointerDown.x, pointer.y - pointerDown.y) > 0.02;
-      const quick = performance.now() - pointerDown.t < 450;
-      pointerDown = null;
-      if (moved || !quick) return;
-      const hit = pick();
-      if (!hit) { hidePopup(); return; }
-      if (hit.idx !== current) { go(hit.idx); return; }
-      if (hit.qid != null) { openQuiz(hit.qid); return; }
-      if (hit.bid) showPopup(hit.bid); else { hidePopup(); /* tapping the island itself also shows 引言 */ showPopup(String(current + 1) + '-1'); }
-    });
-
-    // --- Resize ---
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // --- Island 1 building lean (original parallax, mouse only) ---
-    const leanTarget = { x: 0, z: 0 };
-    const leanCurrent = { x: 0, z: 0 };
-    renderer.domElement.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      const rect = renderer.domElement.getBoundingClientRect();
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      leanTarget.x = ny * 0.12;
-      leanTarget.z = -nx * 0.16;
-    });
-    renderer.domElement.addEventListener('pointerleave', () => { leanTarget.x = 0; leanTarget.z = 0; });
-
-    // --- Animate ---
-    updateUi();
-    const clock = new THREE.Clock();
-    function animate() {
-      requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
-
-      for (const rec of islands) {
-        const b = rec.bob;
-        rec.group.position.y = rec.base.y + Math.sin(t * b.spd + b.ph) * b.amp;
-        rec.group.rotation.y = Math.sin(t * 0.12 + b.ph) * 0.025;
-        const sats = rec.group.userData.sats;
-        if (sats) for (const s of sats) s.position.y = s.userData.sat.base + Math.sin(t * 0.8 + s.userData.sat.ph) * 0.22;
-      }
-
-      leanCurrent.x += (leanTarget.x - leanCurrent.x) * 0.08;
-      leanCurrent.z += (leanTarget.z - leanCurrent.z) * 0.08;
-      for (const b of island1Buildings) { b.rotation.x = leanCurrent.x; b.rotation.z = leanCurrent.z; }
-
-      stars.rotation.y = t * 0.004;
-      stars.material.opacity = 0.72 + Math.sin(t * 1.4) * 0.1 + Math.sin(t * 2.7) * 0.06;
-
-      if (treasure.userData.glowLight) {
-        treasure.userData.glowLight.intensity = 0.45 + Math.sin(t * 2.2) * 0.22;
-        for (const m of treasure.userData.goldMats) m.emissiveIntensity = 0.35 + Math.sin(t * 2.2) * 0.2;
-        treasure.rotation.z = 0.25 + Math.sin(t * 0.9) * 0.08;
-      }
-      quizGemMat.emissiveIntensity = 0.55 + Math.sin(t * 2.4) * 0.3;
-      for (const g of quizMarkers) {
-        const gem = g.children[2];
-        if (gem) gem.rotation.y = t * 1.2;
-      }
-
-      if (fly) {
-        const k = Math.min(1, (performance.now() - fly.t0) / fly.dur);
-        const e = ease(k);
-        camera.position.lerpVectors(fly.fromPos, fly.toPos, e);
-        camera.position.y += Math.sin(Math.PI * e) * fly.lift;
-        controls.target.lerpVectors(fly.fromTgt, fly.toTgt, e);
-        camera.lookAt(controls.target);
-        if (k >= 1) { fly = null; controls.enabled = true; controls.update(); if (pendingQuizAfterFly != null) { const n = pendingQuizAfterFly; pendingQuizAfterFly = null; openQuiz(n); } }
-      } else {
-        controls.update();
-      }
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // ----- Name, score, 本機排行, quiz flow -----
-    let pendingQuizAfterFly = null;
-    let autoAdvanceTimer = 0;
-    const nameInput = document.getElementById('player-name');
-    const scoreVal = document.getElementById('score-val');
-    const doneVal = document.getElementById('done-val');
-    const quizEl = document.getElementById('quiz');
-    const boardEl = document.getElementById('board');
-    const quizTitle = document.getElementById('quiz-title');
-    const quizTheme = document.getElementById('quiz-theme');
-    const quizBlurb = document.getElementById('quiz-blurb');
-    const quizPrompt = document.getElementById('quiz-prompt');
-    const quizChoices = document.getElementById('quiz-choices');
-    const quizFeedback = document.getElementById('quiz-feedback');
-    const quizNext = document.getElementById('quiz-next');
-    const quizSummary = document.getElementById('quiz-summary');
-    const btnQuiz = document.getElementById('btn-quiz');
-    const btnBoard = document.getElementById('btn-board');
-    let quizOpenFor = null;
-
-    function loadProgress() {
-      try { return JSON.parse(localStorage.getItem(LS_PROGRESS) || '{}') || {}; } catch { return {}; }
-    }
-    function saveProgress(p) {
-      try { localStorage.setItem(LS_PROGRESS, JSON.stringify(p)); } catch {}
-    }
-    function loadBoard() {
-      try { return JSON.parse(localStorage.getItem(LS_BOARD) || '[]') || []; } catch { return []; }
-    }
-    function saveBoard(rows) {
-      try { localStorage.setItem(LS_BOARD, JSON.stringify(rows)); } catch {}
-    }
-    function playerName() {
-      const n = (nameInput.value || '').trim();
-      return n || '玩家';
-    }
-    function progressStats(p) {
-      const answers = p.answers || {};
-      let score = 0, done = 0;
-      for (let i = 0; i < 10; i++) {
-        const a = answers[String(i)];
-        if (a && a.answered) {
-          done += 1;
-          if (a.correct) score += SCORE_PER;
-        }
-      }
-      return { score, done };
-    }
-    function refreshHud() {
-      if (!quizHudReady) return;
-      const { score, done } = progressStats(loadProgress());
-      scoreVal.textContent = String(score);
-      doneVal.textContent = String(done);
-      const p = loadProgress();
-      const a = p.answers && p.answers[String(current)];
-      btnQuiz.classList.toggle('done', !!(a && a.answered));
-      btnQuiz.textContent = (a && a.answered) ? '題目 ✓' : '題目';
-    }
-    function upsertBoard() {
-      const name = playerName();
-      const { score, done } = progressStats(loadProgress());
-      if (done === 0) return;
-      let rows = loadBoard().filter((r) => r && r.name !== name);
-      rows.push({ name, score, completed: done, ts: Date.now() });
-      rows.sort((a, b) => (b.score - a.score) || (b.completed - a.completed) || (a.ts - b.ts));
-      rows = rows.slice(0, BOARD_MAX);
-      saveBoard(rows);
-    }
-    function renderBoard() {
-      const rows = loadBoard();
-      const body = document.getElementById('board-body');
-      if (!rows.length) {
-        body.innerHTML = '<p class="empty">暫時未有紀錄。完成至少一島題目後就會寫入本機排行。</p>';
-        return;
-      }
-      let html = '<table><thead><tr><th>名次</th><th>名稱</th><th class="num">總分</th><th class="num">已完成島</th></tr></thead><tbody>';
-      rows.forEach((r, i) => {
-        html += `<tr><td>${i + 1}</td><td>${escapeHtml(r.name)}</td><td class="num">${r.score}/100</td><td class="num">${r.completed}/10</td></tr>`;
-      });
-      html += '</tbody></table>';
-      body.innerHTML = html;
-    }
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-    }
-    function hideQuiz() {
+    quizEl.classList.add('open');
+    quizOpen = true;
+  }
+  function choose(opt, btn) {
+    if (!quizOpen) return;
+    if (opt === QUIZ[active].answer) {
+      quizOpen = false;
       quizEl.classList.remove('open');
-      quizOpenFor = null;
-      if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = 0; }
+      onCorrect();
+    } else {
+      btn.classList.add('bad');
+      warnEl.classList.add('show');
+      flashEl.classList.add('show');
+      warnUntil = performance.now() + 1500;
+      shakeT = 0.64;
     }
-    function hideBoard() { boardEl.classList.remove('open'); }
-    function showBoard() {
-      hideQuiz();
-      renderBoard();
-      boardEl.classList.add('open');
+  }
+  document.getElementById('quiz-x').addEventListener('click', () => {
+    quizOpen = false;
+    quizEl.classList.remove('open');
+  });
+  document.getElementById('done-close').addEventListener('click', () => {
+    doneEl.classList.remove('open');
+  });
+
+  function movementLocked() {
+    return quizOpen || cineT > 0 || doneEl.classList.contains('open');
+  }
+  function updateBasis() {
+    fx = -Math.sin(yaw);
+    fz = -Math.cos(yaw);
+    rx = Math.cos(yaw);
+    rz = -Math.sin(yaw);
+  }
+  function computeFollow() {
+    const horiz = CAM_DIST * Math.cos(pitch);
+    const vert = CAM_DIST * Math.sin(pitch);
+    wantX = boy.position.x - fx * horiz + rx * CAM_SHOULDER;
+    wantY = vert + 1.5;
+    wantZ = boy.position.z - fz * horiz + rz * CAM_SHOULDER;
+    wantLX = boy.position.x + fx * CAM_AHEAD;
+    wantLY = 1.7;
+    wantLZ = boy.position.z + fz * CAM_AHEAD;
+  }
+
+  placeBlueprint(0);
+  updateHud();
+  updateBasis();
+  computeFollow();
+  camera.position.set(wantX, wantY, wantZ);
+  camera.lookAt(wantLX, wantLY, wantLZ);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    down[e.key.toLowerCase()] = true;
+    if (e.key.indexOf('Arrow') === 0) e.preventDefault();
+  });
+  window.addEventListener('keyup', (e) => { delete down[e.key.toLowerCase()]; });
+  window.addEventListener('blur', () => { for (const k in down) delete down[k]; });
+
+  let joyPtr = null;
+  let joyCX = 0;
+  let joyCY = 0;
+  const JOY_R = 36;
+  function joySet(dx, dy) {
+    const len = Math.hypot(dx, dy);
+    const cl = len > JOY_R ? JOY_R : len;
+    const nx = len > 0 ? dx / len * cl : 0;
+    const ny = len > 0 ? dy / len * cl : 0;
+    knobEl.style.transform = 'translate(' + nx.toFixed(1) + 'px,' + ny.toFixed(1) + 'px)';
+    joyX = nx / JOY_R;
+    joyY = ny / JOY_R;
+  }
+  joyEl.addEventListener('pointerdown', (e) => {
+    joyPtr = e.pointerId;
+    joyEl.setPointerCapture(e.pointerId);
+    const r = joyEl.getBoundingClientRect();
+    joyCX = r.left + r.width * 0.5;
+    joyCY = r.top + r.height * 0.5;
+    joySet(e.clientX - joyCX, e.clientY - joyCY);
+  }, { passive: true });
+  joyEl.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== joyPtr) return;
+    joySet(e.clientX - joyCX, e.clientY - joyCY);
+  }, { passive: true });
+  function joyEnd(e) {
+    if (e.pointerId !== joyPtr) return;
+    joyPtr = null;
+    joyX = 0;
+    joyY = 0;
+    knobEl.style.transform = 'translate(0px,0px)';
+  }
+  joyEl.addEventListener('pointerup', joyEnd, { passive: true });
+  joyEl.addEventListener('pointercancel', joyEnd, { passive: true });
+
+  let ptrId = null;
+  let ptrX = 0;
+  let ptrY = 0;
+  let ptrMoved = false;
+  const canvas = renderer.domElement;
+  canvas.addEventListener('pointerdown', (e) => {
+    ptrId = e.pointerId;
+    ptrX = e.clientX;
+    ptrY = e.clientY;
+    ptrMoved = false;
+  }, { passive: true });
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== ptrId) return;
+    const dx = e.clientX - ptrX;
+    const dy = e.clientY - ptrY;
+    if (dx * dx + dy * dy > 36) ptrMoved = true;
+    if (ptrMoved && !movementLocked()) {
+      yaw -= dx * 0.005;
+      pitch += dy * 0.0032;
+      if (pitch < 0.28) pitch = 0.28;
+      if (pitch > 1.08) pitch = 1.08;
     }
-    function openQuiz(idx) {
-      if (idx == null || !QUIZ[idx]) return;
-      if (idx !== current) {
-        pendingQuizAfterFly = idx;
-        go(idx);
-        return;
+    ptrX = e.clientX;
+    ptrY = e.clientY;
+  }, { passive: true });
+  function onTap(ev) {
+    if (quizOpen || cineT > 0 || !blueprint.visible || active < 0) return;
+    const dx = boy.position.x - blueprint.position.x;
+    const dz = boy.position.z - blueprint.position.z;
+    if (dx * dx + dz * dz > NEAR2) return;
+    pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObject(blueprint, true);
+    proj.set(0, 1.9, 0.2);
+    blueprint.updateMatrixWorld(true);
+    blueprint.localToWorld(proj);
+    proj.project(camera);
+    const sx = (proj.x * 0.5 + 0.5) * window.innerWidth;
+    const sy = (-proj.y * 0.5 + 0.5) * window.innerHeight;
+    const px = ev.clientX - sx;
+    const py = ev.clientY - sy;
+    if (hits.length > 0 || px * px + py * py < 130 * 130) openQuiz();
+  }
+  canvas.addEventListener('pointerup', (e) => {
+    if (e.pointerId !== ptrId) return;
+    ptrId = null;
+    if (!ptrMoved) onTap(e);
+  }, { passive: true });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  function onResize() {
+    const w = window.innerWidth;
+    const h = Math.max(1, window.innerHeight);
+    const coarse = matchMedia('(pointer: coarse)').matches || w < 820;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.5));
+    renderer.setSize(w, h);
+  }
+  window.addEventListener('resize', onResize);
+
+  let last = performance.now();
+  let ready = false;
+  function frame(now) {
+    let dt = (now - last) * 0.001;
+    last = now;
+    if (dt > 0.05) dt = 0.05;
+    time += dt;
+
+    if (warnUntil && now > warnUntil) {
+      warnUntil = 0;
+      warnEl.classList.remove('show');
+      flashEl.classList.remove('show');
+    }
+
+    const locked = movementLocked();
+    if (!locked) {
+      if (down.q) yaw += dt * 1.7;
+      if (down.e) yaw -= dt * 1.7;
+    }
+    updateBasis();
+
+    let inF = 0;
+    let inS = 0;
+    if (!locked) {
+      if (down.w || down.arrowup) inF += 1;
+      if (down.s || down.arrowdown) inF -= 1;
+      if (down.d || down.arrowright) inS += 1;
+      if (down.a || down.arrowleft) inS -= 1;
+      inF += -joyY;
+      inS += joyX;
+    }
+    const mag = Math.hypot(inF, inS);
+    if (mag > 1) { inF /= mag; inS /= mag; }
+    const moving = mag > 0.08;
+    if (moving) {
+      const mx = rx * inS + fx * inF;
+      const mz = rz * inS + fz * inF;
+      const nx = boy.position.x + mx * SPEED * dt;
+      const nz = boy.position.z + mz * SPEED * dt;
+      if (canWalk(nx, nz)) {
+        boy.position.x = nx;
+        boy.position.z = nz;
+      } else if (canWalk(nx, boy.position.z)) {
+        boy.position.x = nx;
+      } else if (canWalk(boy.position.x, nz)) {
+        boy.position.z = nz;
       }
-      hidePopup();
-      hideBoard();
-      const meta = QUIZ[idx];
-      quizOpenFor = idx;
-      quizEl.style.setProperty('--accent', QUIZ_ACCENT[idx]);
-      quizTitle.textContent = islands[idx].name;
-      quizTheme.textContent = '主題：' + meta.theme;
-      quizBlurb.textContent = meta.intro;
-      quizPrompt.textContent = meta.prompt;
-      quizFeedback.className = 'feedback';
-      quizFeedback.textContent = '';
-      quizNext.className = 'next-hint';
-      quizNext.textContent = '';
-      quizSummary.className = 'summary';
-      quizSummary.textContent = '';
-      quizChoices.innerHTML = '';
-      const p = loadProgress();
-      const prev = (p.answers || {})[String(idx)];
-      const locked = !!(prev && prev.answered);
-      meta.choices.forEach((text, i) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.innerHTML = '<span class="tag">' + String.fromCharCode(65 + i) + '.</span> ' + escapeHtml(text);
-        if (locked) {
-          b.disabled = true;
-          if (i === prev.choice) b.classList.add(prev.correct ? 'correct' : 'wrong');
-          if (!prev.correct && i === meta.correct) b.classList.add('correct');
-        } else {
-          b.addEventListener('click', () => answerQuiz(idx, i));
+      const target = Math.atan2(mx, mz);
+      const d = Math.atan2(Math.sin(target - boy.rotation.y), Math.cos(target - boy.rotation.y));
+      boy.rotation.y += d * Math.min(1, dt * 12);
+      walk += dt * 11;
+      const sw = Math.sin(walk);
+      legL.rotation.x = sw * 0.9;
+      legR.rotation.x = -sw * 0.9;
+      armL.rotation.x = -sw * 0.7;
+      armR.rotation.x = sw * 0.7;
+    } else {
+      const k = Math.min(1, dt * 10);
+      legL.rotation.x += -legL.rotation.x * k;
+      legR.rotation.x += -legR.rotation.x * k;
+      armL.rotation.x += -armL.rotation.x * k;
+      armR.rotation.x += -armR.rotation.x * k;
+    }
+
+    if (blueprint.visible && active >= 0) {
+      const pdx = boy.position.x - blueprint.position.x;
+      const pdz = boy.position.z - blueprint.position.z;
+      nearBlueprint = pdx * pdx + pdz * pdz < NEAR2;
+    } else nearBlueprint = false;
+
+    const bob = Math.sin(time * 2.2) * 0.08;
+    board.position.y = 1.9 + bob;
+    backplate.position.y = 1.9 + bob;
+    glowPlane.position.y = 1.9 + bob;
+    const pulse = 0.55 + Math.sin(time * 3.1) * 0.45;
+    glowMat.opacity = 0.16 + pulse * 0.24;
+    beaconMat.opacity = 0.1 + pulse * 0.16;
+
+    if (arrow.visible) arrow.position.y = 18.5 + Math.sin(time * 2.7) * 1.05;
+
+    for (let i = fading.length - 1; i >= 0; i--) {
+      const s = fading[i];
+      s.userData.k -= dt * 2.15;
+      if (s.userData.k <= 0) {
+        s.visible = false;
+        fading.splice(i, 1);
+      } else {
+        const k = s.userData.k;
+        s.scale.set(k, k, k);
+      }
+    }
+    for (let i = 0; i < 10; i++) {
+      const b = bridges[i];
+      const target = ISLANDS[i].unlocked ? 1 : 0;
+      if (b.userData.g === target) continue;
+      b.userData.g += (target > b.userData.g ? dt : -dt) / 0.55;
+      if (b.userData.g > 1) b.userData.g = 1;
+      if (b.userData.g < 0) b.userData.g = 0;
+      b.scale.z = b.userData.g < 0.02 ? 0.02 : b.userData.g;
+      b.visible = b.userData.g > 0.02;
+    }
+    tickTweens(dt);
+
+    if (cineT > 0) {
+      cineT -= dt;
+      if (cineT < 0) cineT = 0;
+      wantX = cineX; wantY = cineY; wantZ = cineZ;
+      wantLX = cineLX; wantLY = cineLY; wantLZ = cineLZ;
+      if (cineT === 0) {
+        if (camera.fov !== 60) {
+          camera.fov = 60;
+          camera.updateProjectionMatrix();
         }
-        quizChoices.appendChild(b);
-      });
-      if (locked) {
-        showFeedback(idx, prev.correct, false);
-      }
-      quizEl.classList.add('open');
-    }
-    function showFeedback(idx, correct, willAdvance) {
-      const meta = QUIZ[idx];
-      quizFeedback.className = 'feedback show ' + (correct ? 'ok' : 'bad');
-      quizFeedback.textContent = correct ? meta.ok : meta.bad;
-      const { score, done } = progressStats(loadProgress());
-      quizSummary.className = 'summary show';
-      quizSummary.textContent = (correct ? '本島得分 10/10' : '本島得分 0/10') + '　目前總分 ' + score + '/100　已完成 ' + done + '/10';
-      if (willAdvance) {
-        quizNext.className = 'next-hint show';
-        quizNext.textContent = idx < 9 ? '稍後自動飛去下一島並打開題目…' : '稍後顯示總結同本機排行…';
-      }
-    }
-    function answerQuiz(idx, choice) {
-      const meta = QUIZ[idx];
-      const p = loadProgress();
-      if (!p.answers) p.answers = {};
-      if (p.answers[String(idx)] && p.answers[String(idx)].answered) return;
-      const correct = choice === meta.correct;
-      p.answers[String(idx)] = { answered: true, choice, correct };
-      saveProgress(p);
-      upsertBoard();
-      refreshHud();
-      const btns = quizChoices.querySelectorAll('button');
-      btns.forEach((b, i) => {
-        b.disabled = true;
-        if (i === choice) b.classList.add(correct ? 'correct' : 'wrong');
-        if (!correct && i === meta.correct) b.classList.add('correct');
-      });
-      showFeedback(idx, correct, true);
-      if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
-      autoAdvanceTimer = setTimeout(() => {
-        autoAdvanceTimer = 0;
-        if (idx < 9) {
-          hideQuiz();
-          pendingQuizAfterFly = idx + 1;
-          go(idx + 1);
-        } else {
-          const { score, done } = progressStats(loadProgress());
-          quizNext.className = 'next-hint show';
-          quizNext.textContent = '';
-          quizSummary.className = 'summary show';
-          quizSummary.textContent = '十島題目已結束。總分 ' + score + '/100，已完成 ' + done + '/10。以下係本機排行。';
-          showBoard();
+        if (aimIsland >= 0) {
+          const isl = ISLANDS[aimIsland];
+          yaw = Math.atan2(boy.position.x - isl.x, boy.position.z - isl.z);
+          boy.rotation.y = Math.atan2(isl.x - boy.position.x, isl.z - boy.position.z);
+          aimIsland = -1;
         }
-      }, 2600);
+        if (pendingDone && tweens.length === 0) showDone();
+      }
+    } else {
+      computeFollow();
+    }
+    const ck = 1 - Math.exp(-4.8 * dt);
+    camera.position.x += (wantX - camera.position.x) * ck;
+    camera.position.y += (wantY - camera.position.y) * ck;
+    camera.position.z += (wantZ - camera.position.z) * ck;
+    camera.lookAt(wantLX, wantLY, wantLZ);
+    if (shakeT > 0) {
+      shakeT -= dt;
+      if (shakeT < 0) shakeT = 0;
+      const mag = shakeT * 1.45;
+      camera.position.x += Math.sin(time * 54) * mag;
+      camera.position.y += Math.cos(time * 47) * mag * 0.62;
+      camera.position.z += Math.sin(time * 41) * mag * 0.45;
+      camera.rotateZ(Math.sin(time * 62) * shakeT * 0.24);
     }
 
-    try { nameInput.value = localStorage.getItem(LS_NAME) || ''; } catch {}
-    nameInput.addEventListener('change', () => {
-      try { localStorage.setItem(LS_NAME, nameInput.value.trim()); } catch {}
-      upsertBoard();
-      refreshHud();
-    });
-    nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') nameInput.blur(); });
-    btnQuiz.addEventListener('click', (e) => { e.stopPropagation(); openQuiz(current); });
-    btnBoard.addEventListener('click', (e) => { e.stopPropagation(); if (boardEl.classList.contains('open')) hideBoard(); else showBoard(); });
-    quizEl.querySelector('.close').addEventListener('click', (e) => { e.stopPropagation(); hideQuiz(); });
-    boardEl.querySelector('.close').addEventListener('click', (e) => { e.stopPropagation(); hideBoard(); });
+    let nextHint;
+    if (doneShown && doneEl.classList.contains('open')) nextHint = '十件構件已在主島組裝完成';
+    else if (cineT > 0) nextHint = pendingDone ? '最後一件構件飛往主島' : '構件飛往主島，黃色箭嘴指向下一座島';
+    else if (quizOpen) nextHint = '選擇一個答案';
+    else if (nearBlueprint) nextHint = '點擊發光的 BIM 藍圖';
+    else nextHint = 'WASD 或左下搖桿移動，拖曳畫面轉向。走到解鎖島上的 BIM 藍圖。';
+    setHint(nextHint);
 
-    quizHudReady = true;
-    refreshHud();
+    let st = 'play';
+    if (doneEl.classList.contains('open')) st = 'done';
+    else if (cineT > 0) st = 'cine';
+    else if (quizOpen) st = 'quiz';
+    else if (nearBlueprint) st = 'near';
+    setState(st);
 
-    window.__islands = islands.length;
-    window.__go = go;
-    window.__openQuiz = openQuiz;
-    window.__showIntro = (i) => { hideQuiz(); hideBoard(); showPopup(i === 0 ? 'A' : String(i + 1) + '-1'); };
-    window.__openBoard = showBoard;
-    window.__hideBoard = hideBoard;
-    window.__answer = (i) => answerQuiz(quizOpenFor != null ? quizOpenFor : current, i);
-    window.__info = () => ({ islands: islands.length, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, score: progressStats(loadProgress()) });
-
-    window.__proj = (id) => {
-      let found = null;
-      scene.traverse((o) => { if (!found && o.isGroup && (o.userData.buildingId === id || o.name === id)) found = o; });
-      if (!found) return null;
-      const v = new THREE.Vector3(0, 0.5, 0); found.localToWorld(v); v.project(camera);
-      return { x: (v.x + 1) / 2 * window.innerWidth, y: (1 - v.y) / 2 * window.innerHeight };
-    };
+    renderer.render(scene, camera);
+    if (!ready) {
+      ready = true;
+      document.body.dataset.ready = '1';
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
   </script>
 </body>
 </html>
