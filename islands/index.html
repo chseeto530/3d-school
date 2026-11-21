@@ -204,7 +204,7 @@
     }
     #flash.show { box-shadow: inset 0 0 90px 28px rgba(255, 32, 54, 0.62); }
   </style>
-  <script>console.info('isl4');</script>
+  <script>console.info('isl5');</script>
 </head>
 <body>
   <div id="view"></div>
@@ -310,15 +310,19 @@
 
   const MAIN_R = 30;
   const SMALL_R = 10;
-  const ORBIT = 100;
+  const ORBIT = 52;
+  const BR_IN = 26.4;
+  const BR_OUT = ORBIT - SMALL_R + 3.4;
+  const BR_MID = (BR_IN + BR_OUT) * 0.5;
+  const BR_LEN = BR_OUT - BR_IN;
   const BODY = 0.42;
-  const SHIELD_R = 12.4;
+  const SHIELD_R = 11.8;
   const NEAR2 = 8.2 * 8.2;
   const SPEED = 11;
   const CAM_DIST = 20;
   const CAM_SHOULDER = 3.1;
   const CAM_AHEAD = 6.5;
-  const BG = 0x071422;
+  const BG = 0x10283f;
 
   const PART_HEX = [0x3ecfc0, 0xf0a04b, 0x8fb0ff, 0x8de09a, 0x5ad7e5, 0xf5d76e, 0xc9b6ff, 0x5dcaa5, 0xff8b6a, 0xffc2d4];
   const DOCK = [
@@ -363,16 +367,14 @@
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BG);
-  scene.fog = new THREE.Fog(BG, 210, 520);
+  scene.fog = new THREE.Fog(0x1a4664, 130, 340);
   const camera = new THREE.PerspectiveCamera(60, window.innerWidth / Math.max(1, window.innerHeight), 0.12, 600);
 
-  scene.add(new THREE.AmbientLight(0xc5d4ea, 0.78));
-  const sun = new THREE.DirectionalLight(0xfff3dd, 1.35);
-  sun.position.set(48, 86, 26);
+  scene.add(new THREE.HemisphereLight(0xc5e4ff, 0x2a5a48, 0.78));
+  scene.add(new THREE.AmbientLight(0x8eabbe, 0.22));
+  const sun = new THREE.DirectionalLight(0xfff1d0, 1.05);
+  sun.position.set(36, 72, 18);
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x8fb4d8, 0.38);
-  fill.position.set(-36, 24, -18);
-  scene.add(fill);
 
   const starN = 420;
   const starArr = new Float32Array(starN * 3);
@@ -391,12 +393,43 @@
   })));
 
   const water = new THREE.Mesh(
-    new THREE.CircleGeometry(250, 40),
-    new THREE.MeshBasicMaterial({ color: 0x0e4a68 })
+    new THREE.CircleGeometry(180, 36),
+    new THREE.MeshBasicMaterial({ color: 0x0c4a6e })
   );
   water.rotation.x = -Math.PI / 2;
-  water.position.y = -2.6;
+  water.position.y = -2.7;
   scene.add(water);
+  const shallows = new THREE.Mesh(
+    new THREE.CircleGeometry(78, 36),
+    new THREE.MeshBasicMaterial({ color: 0x1a6d92 })
+  );
+  shallows.rotation.x = -Math.PI / 2;
+  shallows.position.y = -2.45;
+  scene.add(shallows);
+  const skyCanvas = document.createElement('canvas');
+  skyCanvas.width = 4;
+  skyCanvas.height = 256;
+  const skyG = skyCanvas.getContext('2d');
+  const skyGrad = skyG.createLinearGradient(0, 0, 0, 256);
+  skyGrad.addColorStop(0, '#07162e');
+  skyGrad.addColorStop(0.45, '#163e62');
+  skyGrad.addColorStop(0.72, '#2a6a8a');
+  skyGrad.addColorStop(1, '#c4a27a');
+  skyG.fillStyle = skyGrad;
+  skyG.fillRect(0, 0, 4, 256);
+  const skyTex = new THREE.CanvasTexture(skyCanvas);
+  skyTex.colorSpace = THREE.SRGBColorSpace;
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(320, 14, 10),
+    new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false })
+  );
+  scene.add(sky);
+  const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(5.2, 12, 10),
+    new THREE.MeshBasicMaterial({ color: 0xfff6d4, fog: false })
+  );
+  moon.position.set(-28, 58, -36);
+  scene.add(moon);
 
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
   const mainGeo = new THREE.CylinderGeometry(MAIN_R, 22, 8, 10);
@@ -464,7 +497,7 @@
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }));
-    s.scale.set(8.4, 4.2, 1);
+    s.scale.set(6.4, 3.2, 1);
     s.renderOrder = 3;
     return s;
   }
@@ -498,6 +531,98 @@
     }
   }
 
+  const shoreMat = new THREE.MeshLambertMaterial({ color: 0xd2c09a, flatShading: true });
+  const mainShore = new THREE.Mesh(new THREE.RingGeometry(28.6, 33.2, 28), shoreMat);
+  mainShore.rotation.x = -Math.PI / 2;
+  mainShore.position.y = 0.045;
+  scene.add(mainShore);
+  const foam = new THREE.Mesh(
+    new THREE.RingGeometry(32.6, 34.4, 28),
+    new THREE.MeshBasicMaterial({ color: 0xd7f3ee, transparent: true, opacity: 0.55, depthWrite: false })
+  );
+  foam.rotation.x = -Math.PI / 2;
+  foam.position.y = -2.32;
+  scene.add(foam);
+  const smallShore = new THREE.InstancedMesh(new THREE.RingGeometry(9.15, 11.35, 14), shoreMat, 10);
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < 10; i++) {
+    dummy.position.set(ISLANDS[i].x, 0.05, ISLANDS[i].z);
+    dummy.rotation.set(-Math.PI / 2, 0, 0);
+    dummy.scale.set(1, 1, 1);
+    dummy.updateMatrix();
+    smallShore.setMatrixAt(i, dummy.matrix);
+  }
+  smallShore.instanceMatrix.needsUpdate = true;
+  scene.add(smallShore);
+
+  function scatter(geo, mat, spots) {
+    const mesh = new THREE.InstancedMesh(geo, mat, spots.length);
+    const tint = new THREE.Color();
+    for (let i = 0; i < spots.length; i++) {
+      const p = spots[i];
+      dummy.position.set(p[0], p[1], p[2]);
+      dummy.rotation.set(p[3] || 0, p[4] || 0, p[5] || 0);
+      dummy.scale.set(p[6] || 1, p[7] || 1, p[8] || 1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      if (p[9] != null) {
+        tint.setHex(p[9]);
+        mesh.setColorAt(i, tint);
+      }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    scene.add(mesh);
+  }
+  const trunkSpots = [];
+  const leafSpots = [];
+  const bushSpots = [];
+  const rockSpots = [];
+  for (let i = 0; i < 10; i++) {
+    const a = ISLANDS[i].ang + Math.PI / 10;
+    const r = 15.5 + (i % 3) * 1.6;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = 1.15 + (i % 4) * 0.18;
+    trunkSpots.push([x, h * 0.5, z, 0, a, 0, 0.22, h, 0.22]);
+    leafSpots.push([x, h + 0.7, z, 0, a, 0, 0.85, 1.25, 0.85, i % 2 ? 0x3cba6c : 0x2c8f4e]);
+    const br = 11.2 + (i % 2) * 1.3;
+    const ba = a + 0.42;
+    bushSpots.push([Math.cos(ba) * br, 0.32, Math.sin(ba) * br, 0, ba, 0, 0.55, 0.38, 0.55, 0x3a9a58]);
+    const isl = ISLANDS[i];
+    const ox = isl.x + Math.cos(isl.ang) * 6.1;
+    const oz = isl.z + Math.sin(isl.ang) * 6.1;
+    trunkSpots.push([ox, 0.48, oz, 0, isl.ang, 0, 0.16, 0.95, 0.16]);
+    leafSpots.push([ox, 1.45, oz, 0, isl.ang, 0, 0.7, 1.05, 0.7, 0x34985a]);
+    const sx = isl.x + Math.cos(isl.ang + 1.4) * 5.4;
+    const sz = isl.z + Math.sin(isl.ang + 1.4) * 5.4;
+    bushSpots.push([sx, 0.28, sz, 0, i, 0, 0.42, 0.3, 0.42, 0x2f7d48]);
+    const gap = ISLANDS[i].ang + Math.PI / 10;
+    rockSpots.push([
+      Math.cos(gap) * 37.2, -0.35, Math.sin(gap) * 37.2,
+      0.4, gap, 0.2, 0.9, 0.55, 0.75, 0x6d7c86,
+    ]);
+    rockSpots.push([
+      isl.x + Math.cos(isl.ang - 1.5) * 7.4, 0.22, isl.z + Math.sin(isl.ang - 1.5) * 7.4,
+      0.6, i, 0.3, 0.45, 0.32, 0.4, 0x7d8b90,
+    ]);
+  }
+  scatter(new THREE.CylinderGeometry(1, 1.15, 1, 5), new THREE.MeshLambertMaterial({ color: 0x6a4632, flatShading: true }), trunkSpots);
+  scatter(new THREE.ConeGeometry(1, 1.3, 6), new THREE.MeshLambertMaterial({ color: 0x2f8f52, flatShading: true }), leafSpots);
+  scatter(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: 0x348a52, flatShading: true }), bushSpots);
+  scatter(new THREE.DodecahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: 0x74848c, flatShading: true }), rockSpots);
+  const cloudSpots = [];
+  for (let i = 0; i < 7; i++) {
+    const a = i * 0.9 + 0.4;
+    const rr = 48 + (i % 3) * 10;
+    cloudSpots.push([Math.cos(a) * rr, 26 + (i % 4) * 4, Math.sin(a) * rr, 0, a, 0, 4.2, 1.3, 2.6]);
+  }
+  scatter(
+    new THREE.SphereGeometry(1, 6, 5),
+    new THREE.MeshBasicMaterial({ color: 0xd7e6f4, transparent: true, opacity: 0.5, depthWrite: false, fog: false }),
+    cloudSpots
+  );
+
   const domeGeo = new THREE.SphereGeometry(11.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
   const domeMat = new THREE.MeshBasicMaterial({
     color: 0xff2d3a, transparent: true, opacity: 0.4, depthWrite: false, fog: false,
@@ -529,13 +654,13 @@
     fading.push(s);
   }
 
-  const bridgeGeo = new THREE.BoxGeometry(3.5, 0.16, 66);
-  const bridgeMat = new THREE.MeshLambertMaterial({ color: 0xbaf7ef, emissive: 0x146860, flatShading: true });
+  const bridgeGeo = new THREE.BoxGeometry(3.4, 0.16, BR_LEN);
+  const bridgeMat = new THREE.MeshLambertMaterial({ color: 0xd7fff6, emissive: 0x1c7c74, flatShading: true });
   const bridges = [];
   for (let i = 0; i < 10; i++) {
     const b = new THREE.Mesh(bridgeGeo, bridgeMat);
     const ang = ISLANDS[i].ang;
-    b.position.set(Math.cos(ang) * 60, 0.1, Math.sin(ang) * 60);
+    b.position.set(Math.cos(ang) * BR_MID, 0.1, Math.sin(ang) * BR_MID);
     b.rotation.y = Math.PI / 2 - ang;
     b.userData.g = i === 0 ? 1 : 0;
     b.scale.z = i === 0 ? 1 : 0.02;
@@ -549,7 +674,7 @@
     const uz = Math.sin(ang);
     const radial = x * ux + z * uz;
     const side = x * (-uz) + z * ux;
-    return radial >= 26.2 && radial <= 93.8 && side <= 1.65 && side >= -1.65;
+    return radial >= BR_IN - 0.35 && radial <= BR_OUT + 0.55 && side <= 1.6 && side >= -1.6;
   }
   function shieldBlocks(x, z) {
     for (let i = 0; i < 10; i++) {
@@ -574,11 +699,11 @@
     }
     return false;
   }
-  for (let z = 20; z >= -100; z -= 1) {
+  for (let z = 6; z >= -ORBIT; z -= 0.5) {
     if (!canWalk(0, z)) throw new Error('path ' + z);
   }
   if (canWalk(ISLANDS[1].x, ISLANDS[1].z)) throw new Error('lock');
-  if (canWalk(40, -60)) throw new Error('water');
+  if (canWalk(7, -36)) throw new Error('water');
 
   const boy = new THREE.Group();
   const skin = new THREE.MeshLambertMaterial({ color: 0xf2c7a2 });
@@ -642,7 +767,7 @@
   blob.position.y = 0.04;
   boy.add(blob);
   boy.scale.setScalar(1.35);
-  boy.position.set(0, 0, 20);
+  boy.position.set(0, 0, -10);
   boy.rotation.y = Math.PI;
   scene.add(boy);
 
@@ -887,13 +1012,13 @@
     const a0 = ISLANDS[from].ang;
     const a1 = next >= 0 ? ISLANDS[next].ang : a0 + 0.5;
     const mid = (a0 + a1) * 0.5;
-    const dist = 132;
-    cineX = Math.cos(mid) * dist + Math.cos(mid + Math.PI / 2) * 28;
-    cineY = 42;
-    cineZ = Math.sin(mid) * dist + Math.sin(mid + Math.PI / 2) * 28;
-    cineLX = Math.cos(a0) * 36;
-    cineLY = 12;
-    cineLZ = Math.sin(a0) * 36;
+    const dist = 72;
+    cineX = Math.cos(mid) * dist + Math.cos(mid + Math.PI / 2) * 14;
+    cineY = 28;
+    cineZ = Math.sin(mid) * dist + Math.sin(mid + Math.PI / 2) * 14;
+    cineLX = Math.cos(a0) * 14;
+    cineLY = 7;
+    cineLZ = Math.sin(a0) * 14;
     cineT = 3.15;
     aimIsland = next;
     if (camera.fov !== 70) {
