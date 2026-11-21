@@ -8299,6 +8299,41 @@ const CAPSULE_BVH = (() => {
 
   // 點擊實際可站立的表面；不把牆面、屋頂、人物或天空當目的地。
   const clickRay = new THREE.Raycaster(), clickUV = new THREE.Vector2();
+  /** Raycaster：回傳點擊處世界座標（公尺），供記錄班房門口等。 */
+  function worldPointFromScreen(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    clickUV.set((clientX - rect.left) / rect.width * 2 - 1, 1 - (clientY - rect.top) / rect.height * 2);
+    camera.updateMatrixWorld();
+    clickRay.setFromCamera(clickUV, camera);
+    const targets = [];
+    const L = window.__bimLoaded;
+    if (L && L.bimPick && L.bimPick.length) targets.push(...L.bimPick);
+    else for (const m of PICKMESH) if (m.visible) targets.push(m);
+    for (const m of PROC_GROUND) if (m.visible) targets.push(m);
+    if (!targets.length) return null;
+    const hits = clickRay.intersectObjects(targets, false);
+    if (!hits.length) return null;
+    return { point: hits[0].point, hit: hits[0] };
+  }
+  function logWorldCoordPick(clientX, clientY) {
+    const pick = worldPointFromScreen(clientX, clientY);
+    if (!pick) {
+      console.warn('[座標拾取] 沒點到建築或地面（請等 BIM 載入完成，或改點模型／地板）');
+      return false;
+    }
+    const { point, hit } = pick;
+    const x = +point.x.toFixed(3), y = +point.y.toFixed(3), z = +point.z.toFixed(3);
+    const mesh = hit.object && (hit.object.name || '(無 name)');
+    console.log('[座標拾取] x=' + x + ', y=' + y + ', z=' + z + ' （mesh: ' + mesh + '）');
+    console.log('[座標拾取] JSON（可貼到 room / door）', { x, y, z });
+    if (typeof toast === 'function') toast('座標已輸出', 'x ' + x + ' · y ' + y + ' · z ' + z + ' — 見瀏覽器 Console（F12）');
+    return true;
+  }
+  /** 左鍵點一下（未拖曳成轉鏡頭）；Alt 保留給 BIM mesh 除錯。 */
+  function shouldLogCoordOnClick(e, p) {
+    return !!(p && p.b === 0 && !p.dragged && !e.altKey);
+  }
   function bimDebugMeshPick(clientX, clientY) {
     if (!window.__bimLoaded || !window.__kitScene?.enabled || typeof KIT_BIM === 'undefined') return false;
     const rect = canvas.getBoundingClientRect();
@@ -8312,14 +8347,17 @@ const CAPSULE_BVH = (() => {
     }
     const h = hits[0];
     const label = KIT_BIM.meshHierarchyLabel ? KIT_BIM.meshHierarchyLabel(h.object) : h.object.name;
+    const px = +h.point.x.toFixed(3), py = +h.point.y.toFixed(3), pz = +h.point.z.toFixed(3);
     const info = {
       meshName: h.object.name || '(無 name)',
       hierarchy: label,
       bimDoor: !!h.object.userData.bimDoor,
       bimWallLike: !!h.object.userData.bimWallLike,
       distance: +h.distance.toFixed(3),
+      x: px, y: py, z: pz,
     };
     console.info('[BIM 點選 mesh]', info, h.object);
+    console.log('[座標拾取] x=' + px + ', y=' + py + ', z=' + pz);
     toast('BIM mesh', info.meshName + (info.bimDoor ? ' · 門（不擋）' : info.bimWallLike ? ' · 牆' : ' · 非牆') + ' — 見 F12');
     return true;
   }
@@ -9032,6 +9070,7 @@ const CAPSULE_BVH = (() => {
       return;
     }
     const p=PT.get(e.pointerId);
+    if (e.type === 'pointerup' && p && shouldLogCoordOnClick(e, p)) logWorldCoordPick(e.clientX, e.clientY);
     if(p&&p.mouse&&mode==='walk'&&LOOK.mode!=='lock'){
       if (!bimWalkInstantLook()) {
         if(e.type==='pointerup'){P.yaw-=lookDX;P.pitch=clamp(P.pitch-lookDY,-1.45,1.45);}
