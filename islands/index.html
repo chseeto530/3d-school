@@ -27,7 +27,7 @@
       position: fixed;
       top: 8px;
       left: 8px;
-      right: 8px;
+      right: 156px;
       z-index: 18;
       display: flex;
       flex-wrap: wrap;
@@ -194,6 +194,37 @@
       transition: opacity 0.12s linear;
     }
     #warn.show { opacity: 1; }
+    #minimap-wrap {
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      z-index: 19;
+      width: 132px;
+      height: 132px;
+      pointer-events: none;
+    }
+    #minimap {
+      width: 132px;
+      height: 132px;
+      display: block;
+      border-radius: 50%;
+      background: rgba(8, 22, 38, 0.78);
+      border: 2px solid rgba(255, 255, 255, 0.32);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    }
+    @media (max-width: 840px) {
+      #hud { right: 112px; }
+      #minimap-wrap, #minimap { width: 88px; height: 88px; }
+      #warn {
+        top: 104px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        max-width: none;
+        text-align: center;
+      }
+      #quiz, #done { top: 156px; }
+    }
     #flash {
       position: fixed;
       inset: 0;
@@ -204,7 +235,7 @@
     }
     #flash.show { box-shadow: inset 0 0 90px 28px rgba(255, 32, 54, 0.62); }
   </style>
-  <script>console.info('isl5');</script>
+  <script>console.info('isl6');</script>
 </head>
 <body>
   <div id="view"></div>
@@ -213,6 +244,7 @@
     <div class="pill" id="hud-count">已組裝 0/10</div>
     <div class="pill" id="hud-next">島 1 · 原本 BIM 島</div>
   </header>
+  <div id="minimap-wrap" aria-hidden="true"><canvas id="minimap" width="256" height="256"></canvas></div>
   <p id="hint">WASD 或左下搖桿移動，拖曳畫面轉向。走到解鎖島上的 BIM 藍圖。</p>
   <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
   <div id="flash"></div>
@@ -842,6 +874,7 @@
   const arrowShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 4.4, 6), arrowMat);
   arrowShaft.position.y = 2.6;
   arrow.add(arrowHead, arrowShaft);
+  arrow.scale.setScalar(0.62);
   arrow.visible = false;
   arrow.renderOrder = 4;
   scene.add(arrow);
@@ -1109,6 +1142,7 @@
   }
 
   placeBlueprint(0);
+  showArrow(0);
   updateHud();
   updateBasis();
   computeFollow();
@@ -1217,8 +1251,77 @@
     camera.updateProjectionMatrix();
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.5));
     renderer.setSize(w, h);
+    sizeMap();
   }
   window.addEventListener('resize', onResize);
+
+  const mapCanvas = document.getElementById('minimap');
+  const mapCtx = mapCanvas.getContext('2d');
+  const MAP_WORLD = 68;
+  function sizeMap() {
+    const css = mapCanvas.clientWidth || 132;
+    const pr = Math.min(window.devicePixelRatio || 1, 2);
+    const px = Math.max(64, Math.round(css * pr));
+    if (mapCanvas.width !== px) {
+      mapCanvas.width = px;
+      mapCanvas.height = px;
+    }
+  }
+  function drawMap() {
+    const w = mapCanvas.width;
+    if (w < 8) return;
+    const ctx = mapCtx;
+    const cx = w * 0.5;
+    const cy = w * 0.5;
+    const scale = (w * 0.5 - 7) / MAP_WORLD;
+    ctx.clearRect(0, 0, w, w);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, w * 0.5 - 1, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = '#0e4d72';
+    ctx.fillRect(0, 0, w, w);
+    ctx.fillStyle = '#d2c09a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30 * scale + 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2f9a6a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    for (let i = 0; i < 10; i++) {
+      const ix = cx + ISLANDS[i].x * scale;
+      const iy = cy + ISLANDS[i].z * scale;
+      ctx.fillStyle = '#c6b48a';
+      ctx.beginPath();
+      ctx.arc(ix, iy, 10 * scale + 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = ISLANDS[i].unlocked ? '#3cb371' : '#6d8f7c';
+      ctx.beginPath();
+      ctx.arc(ix, iy, 10 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      if (i === active) {
+        ctx.strokeStyle = '#ffe033';
+        ctx.lineWidth = Math.max(2, w * 0.014);
+        ctx.beginPath();
+        ctx.arc(ix, iy, 10 * scale + 3.2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    const px = cx + boy.position.x * scale;
+    const py = cy + boy.position.z * scale;
+    const dot = Math.max(2.6, w * 0.02);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(px, py, dot + 1.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff2a36';
+    ctx.beginPath();
+    ctx.arc(px, py, dot, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  sizeMap();
 
   let last = performance.now();
   let ready = false;
@@ -1298,7 +1401,11 @@
     glowMat.opacity = 0.16 + pulse * 0.24;
     beaconMat.opacity = 0.1 + pulse * 0.16;
 
-    if (arrow.visible) arrow.position.y = 18.5 + Math.sin(time * 2.7) * 1.05;
+    if (arrow.visible) {
+      arrow.position.y = 11.4 + Math.sin(time * 2.7) * 0.55;
+      arrow.rotation.y = time * 1.25;
+    }
+    drawMap();
 
     for (let i = fading.length - 1; i >= 0; i--) {
       const s = fading[i];
