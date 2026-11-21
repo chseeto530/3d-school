@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="data:," />
+  <title>BIM Islands — 10 浮空島</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a1628;
+      font-family: "Noto Sans TC", "PingFang HK", "Microsoft JhengHei",
+                   "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      background: #0a1628;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    /* HUD hint — white text */
+    #hint {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      color: #f5f7fa;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      opacity: 0.78;
+      pointer-events: none;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+      white-space: normal;
+      text-align: center;
+      max-width: min(520px, calc(100vw - 40px));
+      line-height: 1.55;
+      user-select: none;
+    }
+
+    /* Dark glass popup — white titles & body */
+    #popup {
+      position: fixed;
+      top: 48px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      z-index: 20;
+      width: min(420px, calc(100vw - 32px));
+      padding: 22px 24px 20px;
+      border-radius: 14px;
+      background: rgba(12, 22, 40, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+      pointer-events: none;
+    }
+    #popup.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    #popup::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 18px;
+      right: 18px;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: var(--accent, #4ecdc4);
+    }
+    #popup .close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f7fa;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    #popup .close:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+    #popup h2 {
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin: 0 28px 12px 0;
+      line-height: 1.35;
+    }
+    #popup p {
+      color: #f5f7fa;
+      font-size: 14px;
+      line-height: 1.7;
+      margin: 0;
+      opacity: 0.92;
+    }
+
+    #popup.accent-a { --accent: #4ecdc4; }
+    #popup.accent-b { --accent: #f0a04b; }
+    #popup.accent-t { --accent: #f5c542; }
+      #hint { bottom: 118px; }
+    #nav {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      z-index: 15;
+      width: min(640px, calc(100vw - 20px));
+      padding: 10px 12px 12px;
+      border-radius: 14px;
+      background: rgba(12, 22, 40, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      color: #f5f7fa;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    #nav-name {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 8px;
+      letter-spacing: 0.03em;
+    }
+    #nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    #nav button {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 8px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #f5f7fa;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #nav button:hover { background: rgba(255, 255, 255, 0.14); }
+    #nav button.active {
+      background: rgba(78, 205, 196, 0.28);
+      border-color: #4ecdc4;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    #nav button.arrow { font-size: 16px; }
+    @media (max-width: 480px) {
+      #nav button { min-width: 30px; height: 32px; padding: 0 6px; font-size: 13px; }
+      #hint { bottom: 132px; font-size: 12px; }
+      #popup { top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-wrap"></div>
+  <div id="hint"></div>
+  <div id="popup" role="dialog" aria-modal="true" aria-labelledby="popup-title">
+    <button class="close" type="button" aria-label="關閉">×</button>
+    <h2 id="popup-title"></h2>
+    <p id="popup-body"></p>
+  </div>
+  <div id="nav">
+    <div id="nav-name">島嶼 1</div>
+    <div id="nav-row">
+      <button class="arrow" id="prev" type="button" aria-label="上一個島">‹</button>
+      <span id="nav-nums" style="display:contents"></span>
+      <button class="arrow" id="next" type="button" aria-label="下一個島">›</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Island 1 copy — unchanged from original
+    const COPY = {
+      A: {
+        title: 'MEP 碰撞檢測',
+        body: '施工前用 BIM 三維模型，自動檢查機電管線同結構、建築有冇撞位。提早搵到交叉、淨高唔夠或安裝位唔夠，減少現場返工同延誤，跨專業協調更快更準。',
+        accent: '#4ecdc4',
+      },
+      B: {
+        title: '施工模擬／4D',
+        body: '把 3D 模型同工期計劃一齊播，預先睇清工序銜接、吊運路徑同資源點擺。早發現時序衝突同安全隱患，計劃更穩，跨專業溝通同決策都更清楚。',
+        accent: '#f0a04b',
+      },
+      T: {
+        title: '你找到了 BIM 機電零件！',
+        body: '你找到了 BIM 機電零件！',
+        accent: '#f5c542',
+      },
+    };
+    const HINT_1 = '喺島上慢慢轉一轉——兩座建築附近同草地邊角，可能藏住驚喜。留意閃光或唔尋常嘅小物件，搵到就係你嘅！';
+    const HINT_N = '撳建築睇資料・撳其他島或者下面按鈕就會飛過去';
+
+    const BG = 0x0a1628;
+    const isMobile = matchMedia('(pointer: coarse)').matches || window.innerWidth < 700;
+
+    // --- Renderer (light: no shadows, pixelRatio ≤ 1.5) ---
+    const wrap = document.getElementById('canvas-wrap');
+    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: false, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(BG, 1);
+    renderer.shadowMap.enabled = false;
+    wrap.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(BG);
+    scene.fog = new THREE.FogExp2(BG, 0.011);
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 400);
+    camera.position.set(7.5, 5.2, 9.5);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 4;
+    controls.maxDistance = 42;
+    controls.maxPolarAngle = Math.PI * 0.48;
+    controls.minPolarAngle = Math.PI * 0.18;
+    controls.target.set(0, 1.2, 0);
+    controls.enablePan = false;
+    controls.update();
+
+    // --- Lights ---
+    scene.add(new THREE.AmbientLight(0x6a8ab0, 0.6));
+    const sun = new THREE.DirectionalLight(0xfff2dd, 1.15);
+    sun.position.set(6, 12, 4);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x4a6a9a, 0.35);
+    fill.position.set(-5, 4, -3);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0x3a7ca5, 0.25);
+    rim.position.set(0, 3, -8);
+    scene.add(rim);
+
+    // --- Stars (one draw call) ---
+    const starCount = isMobile ? 600 : 1100;
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(1 - Math.random() * 1.2);
+      const r = 140 + Math.random() * 80;
+      starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPos[i * 3 + 1] = r * Math.cos(phi) - 10;
+      starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+      color: 0xdce8ff, size: 0.5, transparent: true, opacity: 0.85,
+      depthWrite: false, sizeAttenuation: true, fog: false,
+    }));
+    scene.add(stars);
+
+    // --- Shared geometry ---
+    const box = new THREE.BoxGeometry(1, 1, 1);
+    const ico = new THREE.IcosahedronGeometry(1, 0);
+    const dod = new THREE.DodecahedronGeometry(1, 0);
+    const cyl8 = new THREE.CylinderGeometry(1, 1, 1, 8);
+    const cyl6 = new THREE.CylinderGeometry(1, 1, 1, 6);
+
+    function std(color, rough = 0.92, metal = 0.05) {
+      return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, flatShading: true });
+    }
+    function mkMats(rock, dark, grass, edge) {
+      return { rock: std(rock), dark: std(dark, 0.95, 0.04), grass: std(grass, 0.85, 0.02), edge: std(edge, 0.88, 0.02) };
+    }
+    function add(parent, geo, mat, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      m.scale.set(sx, sy, sz);
+      m.rotation.set(rx, ry, rz);
+      parent.add(m);
+      return m;
+    }
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });
+    function shadowDisc(g, r, y) {
+      const s = new THREE.Mesh(new THREE.CircleGeometry(r, 24), shadowMat);
+      s.rotation.x = -Math.PI / 2;
+      s.position.y = y;
+      g.add(s);
+    }
+
+    const islands = []; // { group, base, name, view, bob, buildings }
+    const pickables = [];
+
+    // =====================================================================
+    // ISLAND 1 — original island, geometry/buildings/copy/treasure unchanged
+    // =====================================================================
+    const island = new THREE.Group();
+    island.name = 'island';
+    scene.add(island);
+    {
+      const M = mkMats(0x5a6578, 0x3d4656, 0x3d8b5a, 0x2f6e48);
+      add(island, box, M.rock, 0, 0.15, 0, 4.6, 1.1, 3.8, 0, 0.12, 0);
+      add(island, box, M.dark, -0.3, -0.55, 0.2, 3.8, 0.9, 3.2, 0.05, -0.2, 0.04);
+      add(island, ico, M.rock, 1.8, -0.2, -0.9, 1.4, 1.1, 1.3, 0.3, 0.5, 0.1);
+      add(island, ico, M.dark, -2.0, -0.35, 0.7, 1.5, 1.2, 1.4, 0.4, -0.8, 0.2);
+      add(island, dod, M.rock, 0.6, -0.9, 1.4, 1.3, 1.0, 1.2, 0.2, 0.9, 0.15);
+      add(island, dod, M.dark, -0.8, -1.0, -1.3, 1.4, 1.1, 1.3, 0.5, -0.4, 0.1);
+      add(island, box, M.rock, 2.2, 0.05, 0.8, 1.2, 0.8, 1.5, 0, 0.4, 0.08);
+      add(island, box, M.dark, -2.3, -0.1, -0.6, 1.1, 0.85, 1.4, 0.05, -0.35, -0.05);
+      add(island, ico, M.dark, 0.2, -1.55, 0.1, 1.8, 1.4, 1.6, 0.2, 0.3, 0);
+      add(island, dod, M.dark, -0.5, -1.85, -0.3, 1.2, 1.0, 1.1, 0.6, 1.1, 0.2);
+      const grassTop = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.5, 0.28, 8), M.grass);
+      grassTop.position.set(0.05, 0.82, 0.05);
+      grassTop.rotation.y = 0.18;
+      island.add(grassTop);
+      const grassPad = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 2.9), M.edge);
+      grassPad.position.set(-0.15, 0.78, -0.1);
+      grassPad.rotation.y = -0.08;
+      island.add(grassPad);
+      shadowDisc(island, 3.2, -2.4);
+    }
+
+    const island1Buildings = [];
+    function makeBuilding({ name, color, emissive, x, z, w, d, h, storyTint }) {
+      const group = new THREE.Group();
+      group.name = name;
+      group.userData.buildingId = name;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.18, flatShading: true }));
+      body.position.y = h / 2;
+      body.userData.buildingId = name;
+      group.add(body);
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(w * 1.08, 0.12, d * 1.08),
+        new THREE.MeshStandardMaterial({ color: storyTint, roughness: 0.5, metalness: 0.25, flatShading: true }));
+      roof.position.y = h + 0.06;
+      roof.userData.buildingId = name;
+      group.add(roof);
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x0c1a2e, emissive, emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.4 });
+      const floors = Math.max(2, Math.floor(h / 0.55));
+      for (let i = 0; i < floors; i++) {
+        const wy = 0.35 + i * (h / floors);
+        for (const [ox, oz, ww, dd] of [
+          [0, d / 2 + 0.01, w * 0.72, 0.22],
+          [0, -(d / 2 + 0.01), w * 0.72, 0.22],
+          [w / 2 + 0.01, 0, 0.22, d * 0.72],
+          [-(w / 2 + 0.01), 0, 0.22, d * 0.72],
+        ]) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(ox === 0 ? ww : 0.04, 0.18, oz === 0 ? dd : 0.04), winMat);
+          win.position.set(ox, wy, oz);
+          win.userData.buildingId = name;
+          group.add(win);
+        }
+      }
+      if (h > 2.2) {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.45, 6),
+          new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.4 }));
+        pole.position.y = h + 0.35;
+        pole.userData.buildingId = name;
+        group.add(pole);
+      }
+      group.position.set(x, 0.92, z);
+      island.add(group);
+      island1Buildings.push(group);
+      return group;
+    }
+    makeBuilding({ name: 'A', color: 0x2a9d8f, emissive: 0x3ecfc0, storyTint: 0x1a7a70, x: -1.35, z: 0.15, w: 1.05, d: 0.95, h: 2.05 });
+    makeBuilding({ name: 'B', color: 0xe08a2c, emissive: 0xf0a04b, storyTint: 0xb86a18, x: 1.25, z: -0.2, w: 1.15, d: 1.0, h: 2.55 });
+    {
+      const path = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.04, 0.45), std(0x8a9aaa, 0.9, 0));
+      path.position.set(0, 0.94, 0.55);
+      island.add(path);
+    }
+
+    // Hidden treasure (unchanged behaviour)
+    function makeTreasureGear() {
+      const g = new THREE.Group();
+      g.name = 'treasure';
+      g.userData.buildingId = 'T';
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4a017, emissive: 0xf0a020, emissiveIntensity: 0.55, metalness: 0.85, roughness: 0.28, flatShading: true });
+      const coreMat = new THREE.MeshStandardMaterial({ color: 0xb8860b, emissive: 0xffc040, emissiveIntensity: 0.35, metalness: 0.9, roughness: 0.25 });
+      const rimM = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 8, 16), goldMat);
+      rimM.userData.buildingId = 'T'; g.add(rimM);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.06, 8), coreMat);
+      hub.rotation.x = Math.PI / 2; hub.userData.buildingId = 'T'; g.add(hub);
+      for (let i = 0; i < 6; i++) {
+        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.05, 0.04), goldMat);
+        const a = (i / 6) * Math.PI * 2;
+        tooth.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
+        tooth.rotation.z = a; tooth.userData.buildingId = 'T'; g.add(tooth);
+      }
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.14, 6), coreMat);
+      shaft.position.z = 0.08; shaft.rotation.x = Math.PI / 2; shaft.userData.buildingId = 'T'; g.add(shaft);
+      const glow = new THREE.PointLight(0xffc040, 0.65, 1.8, 2);
+      glow.position.set(0, 0.05, 0);
+      g.add(glow);
+      g.userData.glowLight = glow;
+      g.userData.goldMats = [goldMat, coreMat];
+      const spots = [
+        { x: -2.05, z: 0.85 }, { x: -1.9, z: -0.95 }, { x: 2.0, z: 0.75 }, { x: 1.95, z: -1.05 },
+        { x: -0.15, z: 1.55 }, { x: 0.35, z: -1.45 }, { x: -2.15, z: 0.05 }, { x: 2.2, z: -0.15 },
+      ];
+      const pick = spots[Math.floor(Math.random() * spots.length)];
+      g.position.set(pick.x + (Math.random() - 0.5) * 0.25, 1.02, pick.z + (Math.random() - 0.5) * 0.25);
+      g.rotation.set(0.55, Math.random() * Math.PI * 2, 0.25);
+      g.scale.setScalar(0.95 + Math.random() * 0.15);
+      island.add(g);
+      return g;
+    }
+    const treasure = makeTreasureGear();
+
+    islands.push({
+      group: island, base: new THREE.Vector3(0, 0, 0), name: '島嶼 1 · BIM 主島',
+      view: { off: new THREE.Vector3(7.5, 4.0, 9.5), ty: 1.2 },
+      bob: { amp: 0.38, spd: 0.55, ph: 0 }, original: true,
+    });
+
+    // =====================================================================
+    // Generic buildings for islands 2–10 (light: ≤ ~7 meshes each)
+    // =====================================================================
+    const PALETTE = [
+      [0x2a9d8f, 0x3ecfc0, '#4ecdc4'], [0xe08a2c, 0xf0a04b, '#f0a04b'], [0x5b7fd6, 0x8fb0ff, '#8fb0ff'],
+      [0xc0566b, 0xff8aa0, '#ff8aa0'], [0x8a6fd1, 0xb9a2ff, '#b9a2ff'], [0x4fa35a, 0x8de09a, '#8de09a'],
+      [0xd8c25a, 0xffe58a, '#ffe58a'], [0x9aa6b8, 0xdfe8f5, '#dfe8f5'],
+    ];
+    const winGeo = box;
+    const matCache = new Map();
+    function cachedMat(key, make) { if (!matCache.has(key)) matCache.set(key, make()); return matCache.get(key); }
+    let palIdx = 0;
+
+    function genericBuilding(rec, g, { id, label, kind = 'box', x, y, z, w = 0.9, d = 0.9, h = 1.6, ry = 0 }) {
+      const [color, emissive, accent] = PALETTE[palIdx++ % PALETTE.length];
+      const b = new THREE.Group();
+      b.userData.buildingId = id;
+      const body = cachedMat('b' + color, () => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.18, flatShading: true }));
+      const win = cachedMat('w' + emissive, () => new THREE.MeshStandardMaterial({ color: 0x0c1a2e, emissive, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.4 }));
+      const roofM = cachedMat('r', () => new THREE.MeshStandardMaterial({ color: 0x2a3446, roughness: 0.55, metalness: 0.25, flatShading: true }));
+      const floors = Math.min(4, Math.max(1, Math.floor(h / 0.6)));
+      if (kind === 'cyl') {
+        add(b, cyl8, body, 0, h / 2, 0, w / 2, h, w / 2);
+        for (let i = 0; i < floors; i++) add(b, cyl8, win, 0, 0.35 + i * (h / floors), 0, w / 2 + 0.015, 0.16, w / 2 + 0.015);
+        add(b, cyl8, roofM, 0, h + 0.05, 0, w / 2 * 1.1, 0.1, w / 2 * 1.1);
+      } else if (kind === 'dome') {
+        add(b, cyl8, body, 0, h / 2, 0, w / 2, h, w / 2);
+        add(b, cyl8, win, 0, h * 0.55, 0, w / 2 + 0.015, 0.16, w / 2 + 0.015);
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(w / 2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), roofM);
+        dome.position.y = h; b.add(dome);
+      } else if (kind === 'gable') {
+        add(b, box, body, 0, h / 2, 0, w, h, d);
+        for (let i = 0; i < floors; i++) add(b, winGeo, win, 0, 0.3 + i * (h / floors), 0, w + 0.02, 0.15, d * 0.7);
+        const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.01, w * 0.62, 0.6, 4), roofM);
+        roof.position.y = h + 0.3; roof.rotation.y = Math.PI / 4; roof.scale.z = d / w; b.add(roof);
+      } else {
+        add(b, box, body, 0, h / 2, 0, w, h, d);
+        for (let i = 0; i < floors; i++) add(b, winGeo, win, 0, 0.32 + i * (h / floors), 0, w + 0.02, 0.16, d + 0.02);
+        add(b, box, roofM, 0, h + 0.06, 0, w * 1.08, 0.12, d * 1.08);
+      }
+      b.traverse((o) => { o.userData.buildingId = id; });
+      b.position.set(x, y, z);
+      b.rotation.y = ry;
+      g.add(b);
+      COPY[id] = {
+        title: `${rec.short}｜${label}`,
+        body: `${rec.short}嘅「${label}」。呢度係佔位文字，之後可以換成正式嘅 BIM 內容。`,
+        accent,
+      };
+      return b;
+    }
+
+    // Shape builders (local coords; return list of building specs)
+    const SHAPES = {
+      ridge(g, M) {
+        add(g, box, M.rock, 0, 0.2, 0, 9.2, 1.1, 2.6, 0, 0.04, 0);
+        add(g, box, M.dark, 0.3, -0.5, 0.1, 8.0, 0.9, 2.1, 0.03, -0.05, 0);
+        for (let i = -3; i <= 3; i++) add(g, i % 2 ? ico : dod, i % 2 ? M.dark : M.rock, i * 1.3, -1.0 - Math.abs(i % 2) * 0.3, (i % 3) * 0.25, 1.2, 1.3 - Math.abs(i) * 0.08, 1.0, 0.3 * i, 0.5 * i, 0.1);
+        add(g, ico, M.dark, 0, -1.9, 0, 2.2, 1.2, 1.0, 0.1, 0.3, 0);
+        add(g, box, M.grass, 0, 0.82, 0, 8.8, 0.26, 2.2, 0, 0.04, 0);
+        shadowDisc(g, 4.2, -2.6);
+        return { top: 0.95, b: [
+          { label: '西翼樓', kind: 'box', x: -3.0, z: 0.1, w: 0.9, d: 0.9, h: 1.4 },
+          { label: '中央樓', kind: 'cyl', x: 0, z: -0.1, w: 1.0, h: 2.2 },
+          { label: '東翼樓', kind: 'gable', x: 3.0, z: 0.1, w: 1.0, d: 0.8, h: 1.1 },
+        ] };
+      },
+      twinPeak(g, M) {
+        add(g, dod, M.rock, -2.2, -0.4, 0, 2.0, 2.0, 2.0, 0.2, 0.4, 0);
+        add(g, dod, M.rock, 2.2, 0.1, 0, 2.0, 2.4, 2.0, 0.3, -0.3, 0.1);
+        add(g, ico, M.dark, -2.0, -2.2, 0.2, 1.4, 1.6, 1.4, 0.4, 0.2, 0);
+        add(g, ico, M.dark, 2.1, -2.0, -0.2, 1.4, 2.0, 1.4, 0.1, 0.8, 0);
+        add(g, box, M.dark, 0, -0.6, 0, 2.6, 0.9, 1.6, 0, 0.1, 0.05);
+        add(g, cyl8, M.grass, -2.2, 1.18, 0, 1.55, 0.26, 1.55, 0, 0.2, 0);
+        add(g, cyl8, M.grass, 2.2, 2.08, 0, 1.55, 0.26, 1.55, 0, 0.5, 0);
+        add(g, box, std(0x8a9aaa, 0.9, 0), 0, 1.0, 0, 2.6, 0.08, 0.5, 0, 0, -0.33);
+        shadowDisc(g, 4, -3.2);
+        return { b: [
+          { label: '左峰館', kind: 'gable', x: -2.2, y: 1.31, z: 0, w: 1.1, d: 0.9, h: 1.2 },
+          { label: '右峰塔', kind: 'cyl', x: 2.2, y: 2.21, z: 0, w: 0.8, h: 2.2 },
+        ] };
+      },
+      terraced(g, M) {
+        add(g, cyl8, M.rock, 0, 0.1, 0, 3.4, 1.2, 3.4, 0, 0.1, 0);
+        add(g, new THREE.CylinderGeometry(1, 0.2, 1, 8), M.dark, 0, -1.9, 0, 3.1, 3.2, 3.1, 0, 0.3, 0);
+        add(g, cyl8, M.grass, 0, 0.8, 0, 3.45, 0.22, 3.45, 0, 0.1, 0);
+        add(g, cyl8, M.rock, 0, 1.2, 0, 2.3, 0.7, 2.3, 0, 0.45, 0);
+        add(g, cyl8, M.grass, 0, 1.6, 0, 2.35, 0.2, 2.35, 0, 0.45, 0);
+        add(g, cyl8, M.rock, 0, 1.95, 0, 1.25, 0.6, 1.25, 0, 0.2, 0);
+        add(g, cyl8, M.grass, 0, 2.3, 0, 1.3, 0.2, 1.3, 0, 0.2, 0);
+        shadowDisc(g, 3.6, -3.2);
+        return { b: [
+          { label: '下層屋', kind: 'box', x: 2.75, y: 0.91, z: 0.6, w: 0.7, d: 0.7, h: 0.9 },
+          { label: '下層倉', kind: 'gable', x: -2.6, y: 0.91, z: -1.0, w: 0.8, d: 0.6, h: 0.8 },
+          { label: '中層樓', kind: 'box', x: -0.6, y: 1.7, z: 1.6, w: 0.8, d: 0.6, h: 1.1 },
+          { label: '頂層塔', kind: 'dome', x: 0, y: 2.4, z: 0, w: 0.9, h: 1.3 },
+        ] };
+      },
+      crescent(g, M) {
+        const pts = [];
+        for (let i = 0; i < 7; i++) {
+          const a = -2.0 + (i / 6) * 4.0;
+          const x = Math.cos(a) * 3.4, z = Math.sin(a) * 3.4;
+          const s = 1.0 + Math.sin((i / 6) * Math.PI) * 0.45;
+          add(g, i % 2 ? ico : dod, i % 2 ? M.dark : M.rock, x, -0.2, z, 1.25 * s, 1.1 * s, 1.25 * s, i, i * 0.7, 0.1);
+          add(g, ico, M.dark, x * 0.9, -1.3 * s, z * 0.9, 0.9 * s, 1.2 * s, 0.9 * s, i * 0.4, i, 0);
+          add(g, cyl8, M.grass, x, 0.72 + (s - 1) * 0.6, z, 1.05 * s, 0.24, 1.05 * s, 0, a, 0);
+          pts.push([x, 0.84 + (s - 1) * 0.6, z, a]);
+        }
+        shadowDisc(g, 4, -2.6);
+        return { b: [
+          { label: '北端屋', kind: 'gable', x: pts[1][0], y: pts[1][1], z: pts[1][2], w: 0.8, d: 0.7, h: 1.0, ry: -pts[1][3] },
+          { label: '中段樓', kind: 'box', x: pts[3][0], y: pts[3][1], z: pts[3][2], w: 1.0, d: 0.9, h: 1.9, ry: -pts[3][3] },
+          { label: '南端塔', kind: 'cyl', x: pts[5][0], y: pts[5][1], z: pts[5][2], w: 0.8, h: 1.5 },
+        ] };
+      },
+      spire(g, M) {
+        add(g, new THREE.CylinderGeometry(1.0, 0.18, 1, 7), M.rock, 0, -2.6, 0, 1.6, 7.2, 1.6, 0, 0.3, 0);
+        add(g, ico, M.dark, 0.5, -1.0, 0.3, 1.1, 1.4, 1.0, 0.3, 0.5, 0);
+        add(g, ico, M.dark, -0.6, -2.4, -0.2, 0.8, 1.5, 0.8, 0.5, 0.1, 0);
+        add(g, dod, M.rock, 0.2, -4.2, 0.1, 0.6, 1.3, 0.6, 0.2, 0.9, 0);
+        add(g, cyl8, M.grass, 0, 1.05, 0, 1.75, 0.24, 1.75, 0, 0.2, 0);
+        shadowDisc(g, 2, -6.8);
+        return { b: [
+          { label: '尖塔', kind: 'cyl', x: 0, y: 1.17, z: 0, w: 0.8, h: 2.8 },
+          { label: '觀景亭', kind: 'dome', x: 1.0, y: 1.17, z: 0.7, w: 0.6, h: 0.5 },
+        ] };
+      },
+      flat(g, M) {
+        add(g, cyl6, M.rock, 0, 0.35, 0, 5.4, 0.55, 5.4, 0, 0, 0);
+        add(g, cyl6, M.dark, 0, -0.05, 0, 4.6, 0.4, 4.6, 0, 0.5, 0);
+        for (let i = 0; i < 6; i++) { const a = i * 1.05; add(g, dod, M.dark, Math.cos(a) * 2.6, -0.45, Math.sin(a) * 2.6, 1.2, 0.5, 1.2, 0.2, a, 0); }
+        add(g, dod, M.dark, 0, -0.6, 0, 2.2, 0.7, 2.2, 0, 0.3, 0);
+        add(g, cyl6, M.grass, 0, 0.7, 0, 5.2, 0.18, 5.2, 0, 0, 0);
+        shadowDisc(g, 5, -1.6);
+        return { top: 0.79, b: [
+          { label: '一號廠房', kind: 'box', x: -2.2, z: -1.0, w: 1.8, d: 1.1, h: 0.8 },
+          { label: '二號廠房', kind: 'box', x: 1.8, z: -1.6, w: 1.4, d: 1.4, h: 0.7 },
+          { label: '控制室', kind: 'dome', x: 0.2, z: 1.6, w: 1.0, h: 0.6 },
+          { label: '倉庫', kind: 'gable', x: 2.6, z: 1.2, w: 1.2, d: 0.9, h: 0.6 },
+        ] };
+      },
+      atoll(g, M) {
+        const n = 12;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          const x = Math.cos(a) * 3.6, z = Math.sin(a) * 3.6;
+          add(g, i % 2 ? ico : dod, i % 2 ? M.dark : M.rock, x, -0.15, z, 1.1, 1.0, 1.1, i, a, 0);
+          add(g, cyl8, M.grass, x, 0.62, z, 1.0, 0.22, 1.0, 0, a, 0);
+        }
+        add(g, dod, M.dark, 0, -1.6, 0, 3.0, 1.4, 3.0, 0.1, 0.2, 0);
+        add(g, ico, M.dark, 0, -2.8, 0, 1.6, 1.4, 1.6, 0.3, 0.6, 0);
+        const lagoon = new THREE.Mesh(new THREE.CircleGeometry(3.1, 24),
+          new THREE.MeshStandardMaterial({ color: 0x1f6f9a, emissive: 0x0d3550, emissiveIntensity: 0.6, roughness: 0.2, metalness: 0.3 }));
+        lagoon.rotation.x = -Math.PI / 2; lagoon.position.y = 0.3; g.add(lagoon);
+        shadowDisc(g, 4.4, -3.8);
+        const at = (i) => { const a = (i / n) * Math.PI * 2; return [Math.cos(a) * 3.6, 0.73, Math.sin(a) * 3.6]; };
+        return { b: [
+          { label: '環礁北屋', kind: 'gable', x: at(3)[0], y: 0.73, z: at(3)[2], w: 0.8, d: 0.7, h: 0.9 },
+          { label: '環礁東樓', kind: 'box', x: at(0)[0], y: 0.73, z: at(0)[2], w: 0.8, d: 0.8, h: 1.5 },
+          { label: '環礁西塔', kind: 'cyl', x: at(7)[0], y: 0.73, z: at(7)[2], w: 0.7, h: 1.9 },
+        ] };
+      },
+      split(g, M) {
+        const L = new THREE.Group(), R = new THREE.Group();
+        g.add(L, R);
+        add(L, box, M.rock, -1.9, 0.1, 0, 3.0, 1.4, 3.8, 0, 0.05, 0.03);
+        add(L, ico, M.dark, -2.0, -1.2, 0.3, 1.6, 1.6, 1.8, 0.3, 0.3, 0);
+        add(L, dod, M.dark, -1.7, -2.3, -0.3, 1.0, 1.2, 1.1, 0.4, 0.2, 0);
+        add(L, box, M.grass, -1.9, 0.9, 0, 2.95, 0.22, 3.75, 0, 0.05, 0.03);
+        add(R, box, M.rock, 1.9, -0.25, 0.1, 2.8, 1.6, 3.4, 0, -0.08, -0.04);
+        add(R, ico, M.dark, 2.0, -1.6, 0, 1.5, 1.8, 1.6, 0.2, 0.9, 0);
+        add(R, dod, M.dark, 1.8, -2.9, 0.2, 0.9, 1.1, 0.9, 0.5, 0.1, 0);
+        add(R, box, M.grass, 1.9, 0.62, 0.1, 2.75, 0.22, 3.35, 0, -0.08, -0.04);
+        add(g, box, std(0x8a9aaa, 0.9, 0), 0, 0.82, 0.2, 1.6, 0.08, 0.6, 0, 0, -0.18);
+        shadowDisc(g, 3.8, -3.4);
+        return { b: [
+          { label: '西崖樓', kind: 'box', x: -2.2, y: 1.01, z: -0.5, w: 1.1, d: 1.0, h: 2.0 },
+          { label: '西崖屋', kind: 'gable', x: -1.9, y: 1.01, z: 1.2, w: 0.8, d: 0.7, h: 0.8 },
+          { label: '東崖塔', kind: 'cyl', x: 2.0, y: 0.73, z: 0.0, w: 0.9, h: 1.6 },
+        ] };
+      },
+      cluster(g, M) {
+        add(g, dod, M.rock, 0, -0.3, 0, 2.4, 1.5, 2.4, 0.1, 0.3, 0);
+        add(g, ico, M.dark, 0, -1.8, 0, 1.6, 1.6, 1.6, 0.3, 0.2, 0);
+        add(g, cyl8, M.grass, 0, 0.9, 0, 2.2, 0.24, 2.2, 0, 0.3, 0);
+        const sats = [];
+        for (const [sx, sy, sz, r] of [[4.2, 1.8, -1.6, 1.2], [-3.8, -0.9, 2.0, 1.35], [0.8, 3.0, 3.6, 0.9]]) {
+          const s = new THREE.Group();
+          s.position.set(sx, sy, sz);
+          add(s, dod, M.rock, 0, -0.3, 0, r, r * 0.8, r, 0.2, sx, 0);
+          add(s, ico, M.dark, 0, -1.0 * r, 0, r * 0.65, r * 0.9, r * 0.65, 0.3, sz, 0);
+          add(s, cyl8, M.grass, 0, 0.32, 0, r * 0.95, 0.2, r * 0.95, 0, 0, 0);
+          s.userData.sat = { ph: sx, base: sy };
+          g.add(s);
+          sats.push(s);
+        }
+        g.userData.sats = sats;
+        shadowDisc(g, 3, -3.2);
+        return { b: [
+          { label: '主樓', kind: 'box', x: -0.3, y: 1.02, z: 0.2, w: 1.1, d: 1.0, h: 2.1 },
+          { label: '副樓', kind: 'gable', x: 1.0, y: 1.02, z: -0.9, w: 0.8, d: 0.7, h: 0.9 },
+          { label: '東衛星屋', kind: 'dome', parent: 0, x: 0, y: 0.42, z: 0, w: 0.8, h: 0.6 },
+          { label: '西衛星樓', kind: 'cyl', parent: 1, x: 0, y: 0.42, z: 0, w: 0.7, h: 1.3 },
+          { label: '高空小屋', kind: 'box', parent: 2, x: 0, y: 0.42, z: 0, w: 0.6, d: 0.6, h: 0.6 },
+        ] };
+      },
+    };
+
+    const DEFS = [
+      { shape: 'ridge',    name: '長脊島', pos: [24, 3, -8],   tint: [0x8a7560, 0x5e4f40, 0x6a9a4a, 0x557d3a], dist: 13 },
+      { shape: 'twinPeak', name: '雙峰島', pos: [42, -2, 8],   tint: [0x55607a, 0x394258, 0x3d8b6a, 0x2f6e55], dist: 13 },
+      { shape: 'terraced', name: '梯田島', pos: [30, 4, 30],   tint: [0x7a5a52, 0x553e39, 0x5aa04f, 0x47823f], dist: 12 },
+      { shape: 'crescent', name: '新月島', pos: [6, -3, 34],   tint: [0x6a5f80, 0x463f58, 0x4f9a70, 0x3d7a58], dist: 13 },
+      { shape: 'spire',    name: '尖塔島', pos: [-16, 5, 22],  tint: [0x3f4550, 0x2a2f38, 0x4a9a62, 0x3a7a4e], dist: 12, ty: 0.5 },
+      { shape: 'flat',     name: '平台島', pos: [-32, -1, 4],  tint: [0x8a929e, 0x636a75, 0x6fae5c, 0x5a8f4a], dist: 14 },
+      { shape: 'atoll',    name: '環礁島', pos: [-26, 4, -20], tint: [0x9a8a70, 0x6e624f, 0x5fa060, 0x4c824d], dist: 13 },
+      { shape: 'split',    name: '裂崖島', pos: [-6, -2, -32], tint: [0x8a6e45, 0x5f4b2f, 0x5c9a48, 0x4a7d3a], dist: 12 },
+      { shape: 'cluster',  name: '群島',   pos: [18, 6, -30],  tint: [0x4f6f70, 0x354c4d, 0x4f9a68, 0x3e7c53], dist: 14 },
+    ];
+
+    DEFS.forEach((def, i) => {
+      const n = i + 2;
+      const g = new THREE.Group();
+      g.name = 'island' + n;
+      g.position.set(...def.pos);
+      scene.add(g);
+      const rec = {
+        group: g, base: new THREE.Vector3(...def.pos), name: `島嶼 ${n} · ${def.name}`, short: `島嶼 ${n}`,
+        view: { off: new THREE.Vector3(0.62, 0.42, 0.78).normalize().multiplyScalar(def.dist), ty: def.ty ?? 1.2 },
+        bob: { amp: 0.18 + (i % 3) * 0.08, spd: 0.4 + (i % 4) * 0.09, ph: i * 1.7 },
+      };
+      const M = mkMats(...def.tint);
+      const res = SHAPES[def.shape](g, M);
+      res.b.forEach((spec, k) => {
+        const parent = spec.parent != null ? g.userData.sats[spec.parent] : g;
+        genericBuilding(rec, parent, { ...spec, id: `${n}-${k + 1}`, y: spec.y ?? res.top ?? 0.92 });
+      });
+      g.userData.islandIndex = islands.length;
+      islands.push(rec);
+    });
+    island.userData.islandIndex = 0;
+
+    // Freeze static matrices inside islands (only group transforms animate)
+    for (const rec of islands) {
+      rec.group.traverse((o) => { if (o !== rec.group && !(o.userData && o.userData.sat) && o.name !== 'treasure' && !island1Buildings.includes(o)) { o.updateMatrix(); o.matrixAutoUpdate = false; } });
+      pickables.push(rec.group);
+    }
+
+    // --- Popup ---
+    const popupEl = document.getElementById('popup');
+    const titleEl = document.getElementById('popup-title');
+    const bodyEl = document.getElementById('popup-body');
+    const closeBtn = popupEl.querySelector('.close');
+    function showPopup(id) {
+      const c = COPY[id];
+      if (!c) return;
+      titleEl.textContent = c.title;
+      bodyEl.textContent = c.body;
+      popupEl.style.setProperty('--accent', c.accent);
+      popupEl.classList.add('open');
+    }
+    function hidePopup() { popupEl.classList.remove('open'); }
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); hidePopup(); });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hidePopup();
+      if (e.key === 'ArrowRight') go(current + 1);
+      if (e.key === 'ArrowLeft') go(current - 1);
+    });
+
+    // --- Navigation ---
+    const hintEl = document.getElementById('hint');
+    const nameEl = document.getElementById('nav-name');
+    const numsEl = document.getElementById('nav-nums');
+    const numBtns = islands.map((rec, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(i + 1);
+      b.setAttribute('aria-label', rec.name);
+      b.addEventListener('click', () => go(i));
+      numsEl.appendChild(b);
+      return b;
+    });
+    document.getElementById('prev').addEventListener('click', () => go(current - 1));
+    document.getElementById('next').addEventListener('click', () => go(current + 1));
+
+    let current = 0;
+    let fly = null;
+    function updateUi() {
+      numBtns.forEach((b, i) => b.classList.toggle('active', i === current));
+      nameEl.textContent = islands[current].name;
+      hintEl.textContent = current === 0 ? HINT_1 : HINT_N;
+    }
+    function go(i) {
+      const n = islands.length;
+      i = ((i % n) + n) % n;
+      current = i;
+      hidePopup();
+      updateUi();
+      const rec = islands[i];
+      const toTarget = rec.base.clone().add(new THREE.Vector3(0, rec.view.ty, 0));
+      // keep the current viewing direction if reasonable, else default offset
+      const toPos = toTarget.clone().add(rec.view.off.clone().multiplyScalar(fitFactor()));
+      fly = {
+        t0: performance.now(), dur: 1400,
+        fromPos: camera.position.clone(), fromTgt: controls.target.clone(),
+        toPos, toTgt: toTarget,
+        lift: Math.min(8, camera.position.distanceTo(toPos) * 0.15),
+      };
+      controls.enabled = false;
+    }
+    function fitFactor() {
+      const a = window.innerWidth / window.innerHeight;
+      return a >= 1 ? 1 : Math.min(2.2, Math.max(1, 1.2 / a));
+    }
+    // initial framing of island 1 (wider on portrait phones)
+    camera.position.copy(controls.target).add(islands[0].view.off.clone().multiplyScalar(fitFactor()));
+    controls.update();
+    const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+    // --- Raycasting (tap, not drag) ---
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDown = null;
+    function setPointer(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      const cx = event.clientX ?? (event.touches && event.touches[0]?.clientX);
+      const cy = event.clientY ?? (event.touches && event.touches[0]?.clientY);
+      if (cx == null) return false;
+      pointer.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((cy - rect.top) / rect.height) * 2 + 1;
+      return true;
+    }
+    function pick() {
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(pickables, true);
+      for (const h of hits) {
+        if (h.object.material === shadowMat) continue;
+        let o = h.object, bid = null, idx = null;
+        while (o) {
+          if (bid == null && o.userData && o.userData.buildingId) bid = o.userData.buildingId;
+          if (o.userData && o.userData.islandIndex != null) { idx = o.userData.islandIndex; break; }
+          o = o.parent;
+        }
+        if (idx != null) return { bid, idx };
+      }
+      return null;
+    }
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      if (!setPointer(e)) return;
+      pointerDown = { x: pointer.x, y: pointer.y, t: performance.now() };
+    });
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!pointerDown) return;
+      if (!setPointer(e)) { pointerDown = null; return; }
+      const moved = Math.hypot(pointer.x - pointerDown.x, pointer.y - pointerDown.y) > 0.02;
+      const quick = performance.now() - pointerDown.t < 450;
+      pointerDown = null;
+      if (moved || !quick) return;
+      const hit = pick();
+      if (!hit) { hidePopup(); return; }
+      if (hit.idx !== current) { go(hit.idx); return; }
+      if (hit.bid) showPopup(hit.bid); else hidePopup();
+    });
+
+    // --- Resize ---
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- Island 1 building lean (original parallax, mouse only) ---
+    const leanTarget = { x: 0, z: 0 };
+    const leanCurrent = { x: 0, z: 0 };
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      leanTarget.x = ny * 0.12;
+      leanTarget.z = -nx * 0.16;
+    });
+    renderer.domElement.addEventListener('pointerleave', () => { leanTarget.x = 0; leanTarget.z = 0; });
+
+    // --- Animate ---
+    updateUi();
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      for (const rec of islands) {
+        const b = rec.bob;
+        rec.group.position.y = rec.base.y + Math.sin(t * b.spd + b.ph) * b.amp;
+        rec.group.rotation.y = Math.sin(t * 0.12 + b.ph) * 0.025;
+        const sats = rec.group.userData.sats;
+        if (sats) for (const s of sats) s.position.y = s.userData.sat.base + Math.sin(t * 0.8 + s.userData.sat.ph) * 0.22;
+      }
+
+      leanCurrent.x += (leanTarget.x - leanCurrent.x) * 0.08;
+      leanCurrent.z += (leanTarget.z - leanCurrent.z) * 0.08;
+      for (const b of island1Buildings) { b.rotation.x = leanCurrent.x; b.rotation.z = leanCurrent.z; }
+
+      stars.rotation.y = t * 0.004;
+      stars.material.opacity = 0.72 + Math.sin(t * 1.4) * 0.1 + Math.sin(t * 2.7) * 0.06;
+
+      if (treasure.userData.glowLight) {
+        treasure.userData.glowLight.intensity = 0.45 + Math.sin(t * 2.2) * 0.22;
+        for (const m of treasure.userData.goldMats) m.emissiveIntensity = 0.35 + Math.sin(t * 2.2) * 0.2;
+        treasure.rotation.z = 0.25 + Math.sin(t * 0.9) * 0.08;
+      }
+
+      if (fly) {
+        const k = Math.min(1, (performance.now() - fly.t0) / fly.dur);
+        const e = ease(k);
+        camera.position.lerpVectors(fly.fromPos, fly.toPos, e);
+        camera.position.y += Math.sin(Math.PI * e) * fly.lift;
+        controls.target.lerpVectors(fly.fromTgt, fly.toTgt, e);
+        camera.lookAt(controls.target);
+        if (k >= 1) { fly = null; controls.enabled = true; controls.update(); }
+      } else {
+        controls.update();
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
+    window.__islands = islands.length;
+    window.__go = go;
+    window.__proj = (id) => {
+      let found = null;
+      scene.traverse((o) => { if (!found && o.isGroup && (o.userData.buildingId === id || o.name === id)) found = o; });
+      if (!found) return null;
+      const v = new THREE.Vector3(0, 0.5, 0); found.localToWorld(v); v.project(camera);
+      return { x: (v.x + 1) / 2 * window.innerWidth, y: (1 - v.y) / 2 * window.innerHeight };
+    };
+  </script>
+</body>
+</html>
