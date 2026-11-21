@@ -212,10 +212,94 @@
       border: 2px solid rgba(255, 255, 255, 0.32);
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
     }
+
+    #ok {
+      position: fixed;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      max-width: calc(100vw - 24px);
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: rgba(8, 64, 48, 0.94);
+      border: 1px solid #4ecdc4;
+      color: #e8fff8;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s linear;
+    }
+    #ok.show { opacity: 1; }
+    #boss-panel {
+      position: fixed;
+      left: 132px;
+      right: 12px;
+      bottom: calc(58px + env(safe-area-inset-bottom));
+      z-index: 17;
+      width: min(420px, calc(100vw - 148px));
+      max-height: 44vh;
+      overflow: auto;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(12, 22, 40, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      color: #f5f7fa;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.18s ease;
+    }
+    #boss-panel.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    #boss-panel h2 {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.35;
+      margin: 0 0 4px;
+    }
+    #boss-kicker {
+      color: #7ef0ea;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin: 0 0 4px;
+    }
+    #boss-progress {
+      color: #f5f7fa;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 6px;
+    }
+    #boss-panel p, #boss-hints {
+      color: #f5f7fa;
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 0;
+    }
+    #boss-hints { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    #boss-hints li {
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #boss-hints li.done {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+    #boss-hints .sys { color: #9ff6ee; font-weight: 700; }
+
     @media (max-width: 840px) {
       #hud { right: 112px; }
       #minimap-wrap, #minimap { width: 88px; height: 88px; }
-      #warn {
+      #warn, #ok {
         top: 104px;
         left: 10px;
         right: 10px;
@@ -224,32 +308,15 @@
         text-align: center;
       }
       #quiz, #done { top: 156px; }
-    }
-    #boss {
-      position: fixed;
-      top: 56px;
-      left: 168px;
-      right: 156px;
-      z-index: 17;
-      display: none;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(12, 22, 40, 0.92);
-      border: 1px solid rgba(255, 214, 90, 0.5);
-      color: #fff6dc;
-      font-size: 15px;
-      font-weight: 700;
-      line-height: 1.45;
-      text-align: center;
-      pointer-events: none;
-    }
-    #boss.show { display: block; }
-    @media (max-width: 840px) {
-      #boss {
-        top: 108px;
-        left: 8px;
-        right: 8px;
+      #boss-panel {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        bottom: calc(140px + env(safe-area-inset-bottom));
+        max-height: 38vh;
       }
+      #boss-panel p, #boss-hints { font-size: 12px; line-height: 1.4; }
+      #boss-hints li { padding: 4px 7px; }
     }
     #flash {
       position: fixed;
@@ -261,7 +328,7 @@
     }
     #flash.show { box-shadow: inset 0 0 90px 28px rgba(255, 32, 54, 0.62); }
   </style>
-  <script>console.info('isl7');</script>
+  <script>console.info('isl8');</script>
 </head>
 <body>
   <div id="view"></div>
@@ -272,7 +339,6 @@
   </header>
   <div id="minimap-wrap" aria-hidden="true"><canvas id="minimap" width="256" height="256"></canvas></div>
   <p id="hint">WASD 或左下搖桿移動，拖曳畫面轉向。走到解鎖島上的 BIM 藍圖。</p>
-  <div id="boss" role="status"></div>
   <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
   <div id="flash"></div>
   <div id="warn" role="alert">答錯了，請再試一次</div>
@@ -282,11 +348,18 @@
     <h2 id="quiz-q"></h2>
     <div class="choices" id="quiz-choices"></div>
   </div>
+  <div id="ok" role="status">已排除碰撞</div>
   <div id="done" role="dialog" aria-modal="true">
-    <h2>組裝完成</h2>
-    <p>十件構件已在主島中央組裝完成。</p>
+    <h2 id="done-title">組裝完成</h2>
+    <p id="done-body">十件構件已在主島中央組裝完成。</p>
     <button type="button" id="done-close">關閉</button>
   </div>
+  <aside id="boss-panel" aria-live="polite">
+    <p id="boss-kicker">碰撞檢測</p>
+    <h2 id="boss-title">BIM Boss</h2>
+    <p id="boss-progress"></p>
+    <ul id="boss-hints"></ul>
+  </aside>
 
   <script type="importmap">
   {
@@ -367,6 +440,48 @@
     }
   }
 
+  /* BOSS_COPY: official clash copy from BIM內容設計師
+     (/workspace/bim-island/boss-clash-copy.md). Ids unchanged. */
+  const BOSS_COPY = {
+    introTitle: 'BIM Boss 出現',
+    introHint: '主島出現一團混亂嘅機電管線。跟提示找出互相撞位嘅錯誤管線，點擊排除碰撞，唔好點冇衝突嗰啲。',
+    kicker: '碰撞檢測',
+    fightHint: '藍管係給排水、黃管係空調風管、紅管係電氣。跟提示點擊互相干擾嘅管線，唔好點冇衝突嘅管。',
+    wrong: '呢條管冇碰撞。跟提示搵互相干擾嘅系統，例如交叉、穿越或壓住對方嘅管線，先好亂點。',
+    progress: (done, total) => '已排除碰撞 ' + done + '/' + total,
+    hud: (done, total) => 'BIM Boss · 已排除 ' + done + '/' + total,
+    defeatedTitle: '已擊敗 BIM Boss',
+    defeatedBody: '十件構件已喺主島組裝完成，四處空間衝突亦已排除。給排水、空調風管同電氣管線而家各行其路，安裝同檢修都唔會再撞位。',
+    defeatedHint: '所有碰撞已排除，BIM Boss 已被擊敗。機電管線而家各行其路，可以喺主島行近睇清楚。',
+    clashes: [
+      {
+        id: 'wh',
+        name: '給排水 × 風管',
+        hint: '藍管（給排水）同黃管（空調風管）喺同一高度交叉，兩系統互相佔位，現場安裝唔到，要先錯開標高或路徑。',
+        ok: '啱！已排除給排水同風管交叉。兩條管已錯開標高，空間衝突解除，之後安裝同檢修都唔會撞位。',
+      },
+      {
+        id: 'ew',
+        name: '電氣 × 給排水',
+        hint: '紅管（電氣）穿過藍管（給排水）。電線管應避開水管，以免漏水影響供電，或者檢修時互相干擾。',
+        ok: '啱！已排除電氣同給排水衝突。電氣管已改線，不再穿越水管，降低漏水影響供電嘅風險。',
+      },
+      {
+        id: 'he',
+        name: '風管 × 電氣',
+        hint: '黃管（空調風管）壓住紅管（電氣橋架），淨高同維修空間都不足，工人之後好難檢查或更換電線。',
+        ok: '啱！已排除風管壓住電氣橋架。橋架路徑已讓開，淨高同檢修空間都足夠，方便之後維修。',
+      },
+      {
+        id: 'riser',
+        name: '立管 × 風管',
+        hint: '藍色給水立管由下向上穿過黃色風管，風管截面被佔用，安裝同檢修都會撞位，要先移位再開孔。',
+        ok: '啱！已排除立管穿風管。立管已移位，風管保持暢通，之後安裝同檢修都唔會再互相干擾。',
+      },
+    ],
+  };
+  const DEBUG_BOSS = /(?:^|[?&])boss=1(?:&|$)/.test(location.search);
+
   const MAIN_R = 30;
   const SMALL_R = 10;
   const ORBIT = 52;
@@ -405,8 +520,15 @@
   const quizQ = document.getElementById('quiz-q');
   const quizChoices = document.getElementById('quiz-choices');
   const warnEl = document.getElementById('warn');
+  const okEl = document.getElementById('ok');
   const flashEl = document.getElementById('flash');
   const doneEl = document.getElementById('done');
+  const doneTitle = document.getElementById('done-title');
+  const doneBody = document.getElementById('done-body');
+  const bossPanel = document.getElementById('boss-panel');
+  const bossTitle = document.getElementById('boss-title');
+  const bossProgress = document.getElementById('boss-progress');
+  const bossHints = document.getElementById('boss-hints');
   const joyEl = document.getElementById('joy');
   const knobEl = document.getElementById('joy-knob');
 
@@ -912,39 +1034,6 @@
   flightPole.visible = false;
   scene.add(flightPole);
 
-  const pipeGeo = new THREE.CylinderGeometry(1, 1, 1, 6);
-  const pipeMat = {
-    water: new THREE.MeshLambertMaterial({ color: 0x3aa0ff, emissive: 0x0d3f86 }),
-    air: new THREE.MeshLambertMaterial({ color: 0xffd15c, emissive: 0x8a6410 }),
-    elec: new THREE.MeshLambertMaterial({ color: 0xff4d4d, emissive: 0x8c1616 }),
-  };
-  const bossGroup = new THREE.Group();
-  const BOSS_PIPES = [
-    ['water', 0.1, 1.32, 10.7, 3.1, 0.18, 'x', 0],
-    ['air', 0.1, 1.32, 10.7, 1.55, 0.28, 'z', 1],
-    ['air', -0.05, 2.42, 10.15, 2.5, 0.22, 'x', 0],
-    ['elec', -0.62, 2.42, 10.15, 1.55, 0.14, 'y', 1],
-    ['elec', 1.2, 1.55, 9.55, 1.45, 0.12, 'z', 0],
-    ['water', 1.2, 1.55, 9.55, 1.55, 0.22, 'x', 1],
-    ['water', -1.2, 1.5, 9.25, 1.55, 0.15, 'y', 0],
-    ['air', -1.2, 1.5, 9.25, 1.4, 0.24, 'x', 1],
-    ['elec', 0.95, 2.85, 11.35, 1.35, 0.16, 'x', 0],
-    ['water', 1.35, 0.78, 11.05, 1.25, 0.14, 'z', 0],
-  ];
-  for (let i = 0; i < BOSS_PIPES.length; i++) {
-    const spec = BOSS_PIPES[i];
-    const mesh = new THREE.Mesh(pipeGeo, pipeMat[spec[0]]);
-    mesh.scale.set(spec[5], spec[4], spec[5]);
-    if (spec[6] === 'x') mesh.rotation.z = Math.PI / 2;
-    else if (spec[6] === 'z') mesh.rotation.x = Math.PI / 2;
-    mesh.position.set(spec[1], spec[2], spec[3]);
-    mesh.userData.clash = spec[7] === 1;
-    mesh.userData.alive = true;
-    bossGroup.add(mesh);
-  }
-  bossGroup.visible = false;
-  scene.add(bossGroup);
-
   function addBox(group, mat, w, h, d, x, y, z) {
     const m = new THREE.Mesh(unitBox, mat);
     m.scale.set(w, h, d);
@@ -987,6 +1076,184 @@
     scene.add(g);
     parts.push(g);
   }
+
+  const Y_UP = new THREE.Vector3(0, 1, 0);
+  const _dir = new THREE.Vector3();
+  const pipeUnit = new THREE.CylinderGeometry(1, 1, 1, 12);
+  const sphUnit = new THREE.SphereGeometry(1, 12, 8);
+  const hitMat = new THREE.MeshBasicMaterial({
+    transparent: true, opacity: 0, depthWrite: false, fog: false,
+  });
+  const MEP_MAT = {
+    water: new THREE.MeshLambertMaterial({ color: 0x2f6bff, emissive: 0x143088, flatShading: true }),
+    hvac: new THREE.MeshLambertMaterial({ color: 0xf0d000, emissive: 0x6a5800, flatShading: true }),
+    elec: new THREE.MeshLambertMaterial({ color: 0xe03333, emissive: 0x5a0808, flatShading: true }),
+    steel: new THREE.MeshLambertMaterial({ color: 0x4a5560, emissive: 0x15181c, flatShading: true }),
+  };
+  const MEP_FIXED = {
+    water: new THREE.MeshLambertMaterial({ color: 0x5aa0ff, emissive: 0x0a3d38, flatShading: true }),
+    hvac: new THREE.MeshLambertMaterial({ color: 0xe8d86a, emissive: 0x0a3d38, flatShading: true }),
+    elec: new THREE.MeshLambertMaterial({ color: 0xef7a7a, emissive: 0x0a3d38, flatShading: true }),
+  };
+
+  const bossRoot = new THREE.Group();
+  bossRoot.name = 'bimBoss';
+  bossRoot.visible = false;
+  bossRoot.scale.setScalar(0.04);
+  scene.add(bossRoot);
+
+  const bossPickables = [];
+  const bossClashes = [];
+  const bossClean = [];
+  const bossPipeMeshes = [];
+  let bossPhase = 'off';
+  let bossResolved = 0;
+  let bossScaleT = 0;
+  let bossClickLock = 0;
+  let okUntil = 0;
+
+  function setPipePose(mesh, ax, ay, az, bx, by, bz, rx, ry, rz) {
+    mesh.position.set((ax + bx) * 0.5, (ay + by) * 0.5, (az + bz) * 0.5);
+    _dir.set(bx - ax, by - ay, bz - az);
+    const len = _dir.length();
+    mesh.scale.set(rx, len * (ry || 1), rz);
+    if (len > 1e-6) mesh.quaternion.setFromUnitVectors(Y_UP, _dir.normalize());
+    return len;
+  }
+
+  function addPipeSeg(parent, sys, r, ax, ay, az, bx, by, bz, pick) {
+    const mat = MEP_MAT[sys];
+    const mesh = new THREE.Mesh(pipeUnit, mat);
+    setPipePose(mesh, ax, ay, az, bx, by, bz, r, 1, r);
+    parent.add(mesh);
+    const capA = new THREE.Mesh(sphUnit, mat);
+    capA.position.set(ax, ay, az);
+    capA.scale.setScalar(r);
+    const capB = new THREE.Mesh(sphUnit, mat);
+    capB.position.set(bx, by, bz);
+    capB.scale.setScalar(r);
+    parent.add(capA, capB);
+    const rec = { mesh, capA, capB, sys, pick };
+    bossPipeMeshes.push(rec);
+    if (pick) {
+      mesh.userData.bossPick = pick;
+      capA.userData.bossPick = pick;
+      capB.userData.bossPick = pick;
+      const hr = Math.max(r * 2.5, 0.78);
+      const hit = new THREE.Mesh(pipeUnit, hitMat);
+      setPipePose(hit, ax, ay, az, bx, by, bz, hr, 1.08, hr);
+      hit.userData.bossPick = pick;
+      parent.add(hit);
+      bossPickables.push(hit, mesh, capA, capB);
+    }
+    return mesh;
+  }
+
+  const coreMat = new THREE.MeshLambertMaterial({
+    color: 0x3a1218, emissive: 0x7a1020, flatShading: true,
+  });
+  const bossCore = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 1), coreMat);
+  bossCore.position.set(0, 4.2, 0);
+  bossRoot.add(bossCore);
+  const knotMat = new THREE.MeshLambertMaterial({
+    color: 0x5a2a28, emissive: 0x3a0a10, flatShading: true,
+  });
+  const bossKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(2.15, 0.18, 80, 8, 3, 2), knotMat);
+  bossKnot.position.set(0, 4.2, 0);
+  bossRoot.add(bossKnot);
+  const bossLight = new THREE.PointLight(0xff5533, 1.35, 30, 2);
+  bossLight.position.set(0, 6.4, 0);
+  bossRoot.add(bossLight);
+
+  const skid = new THREE.Mesh(unitBox, MEP_MAT.steel);
+  skid.scale.set(6.4, 0.28, 6.4);
+  skid.position.set(0, 0.22, 0);
+  bossRoot.add(skid);
+  for (let i = 0; i < 4; i++) {
+    const leg = new THREE.Mesh(unitBox, MEP_MAT.steel);
+    const sx = i < 2 ? -2.8 : 2.8;
+    const sz = i % 2 === 0 ? -2.8 : 2.8;
+    leg.scale.set(0.28, 0.7, 0.28);
+    leg.position.set(sx, 0.45, sz);
+    bossRoot.add(leg);
+  }
+
+  // Decorative non-pickable tangles
+  addPipeSeg(bossRoot, 'water', 0.16, -5.6, 2.8, 2.4, -3.2, 3.4, 0.2, null);
+  addPipeSeg(bossRoot, 'hvac', 0.2, 4.5, 3.4, 0.2, 5.4, 6.4, -1.2, null);
+  addPipeSeg(bossRoot, 'elec', 0.12, 4.8, 5.2, 1.4, 3.2, 6.4, -1.2, null);
+  addPipeSeg(bossRoot, 'elec', 0.12, -3.4, 2.2, -5.0, -3.4, 5.2, 1.4, null);
+  addPipeSeg(bossRoot, 'hvac', 0.18, -1.0, 4.4, -2.4, -1.8, 6.4, -1.2, null);
+  const coil = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.14, 8, 18), MEP_MAT.steel);
+  coil.position.set(-3.6, 3.6, 3.2);
+  coil.rotation.set(0.7, 0.4, 0.2);
+  bossRoot.add(coil);
+
+  function makeClash(id, sysA, rA, a0, a1, sysB, rB, b0, b1, mx, my, mz) {
+    const pickA = { kind: 'clash', id, side: 'a' };
+    const pickB = { kind: 'clash', id, side: 'b' };
+    addPipeSeg(bossRoot, sysA, rA, a0[0], a0[1], a0[2], a1[0], a1[1], a1[2], pickA);
+    addPipeSeg(bossRoot, sysB, rB, b0[0], b0[1], b0[2], b1[0], b1[1], b1[2], pickB);
+    const markMat = new THREE.MeshBasicMaterial({
+      color: 0xff3344, transparent: true, opacity: 0.86, depthWrite: false, fog: false,
+    });
+    const marker = new THREE.Mesh(new THREE.SphereGeometry(0.82, 14, 10), markMat);
+    marker.position.set(mx, my, mz);
+    marker.renderOrder = 5;
+    marker.userData.bossPick = { kind: 'clash', id, side: 'mark' };
+    const markHit = new THREE.Mesh(sphUnit, hitMat);
+    markHit.position.set(mx, my, mz);
+    markHit.scale.setScalar(1.25);
+    markHit.userData.bossPick = marker.userData.bossPick;
+    bossRoot.add(marker, markHit);
+    bossPickables.push(marker, markHit);
+    const rec = {
+      id, sysA, sysB, marker, markHit, resolved: false,
+      splitA: sysA === 'hvac' || sysA === 'water' ? 0.7 : 0.55,
+      splitB: -(sysB === 'hvac' ? 0.65 : 0.5),
+    };
+    bossClashes.push(rec);
+  }
+
+  // Clash 1: water × HVAC, same height cross at origin-ish
+  makeClash(
+    'wh',
+    'water', 0.32, [-4.6, 3.4, 0.2], [4.6, 3.4, 0.2],
+    'hvac', 0.44, [0.2, 3.4, -4.6], [0.2, 3.4, 4.6],
+    0.2, 3.4, 0.2
+  );
+  // Clash 2: electrical × water
+  makeClash(
+    'ew',
+    'elec', 0.22, [-3.4, 5.2, 1.4], [4.8, 5.2, 1.4],
+    'water', 0.3, [1.6, 5.2, -3.6], [1.6, 5.2, 4.2],
+    1.6, 5.2, 1.4
+  );
+  // Clash 3: HVAC × electrical
+  makeClash(
+    'he',
+    'hvac', 0.4, [-5.0, 6.4, -1.2], [3.2, 6.4, -1.2],
+    'elec', 0.22, [-1.8, 6.4, -4.6], [-1.8, 6.4, 3.6],
+    -1.8, 6.4, -1.2
+  );
+  // Clash 4: water riser × HVAC
+  makeClash(
+    'riser',
+    'water', 0.3, [2.6, 0.55, -2.4], [2.6, 7.2, -2.4],
+    'hvac', 0.4, [-1.0, 4.4, -2.4], [5.6, 4.4, -2.4],
+    2.6, 4.4, -2.4
+  );
+
+  function addClean(sys, r, ax, ay, az, bx, by, bz) {
+    const pick = { kind: 'clean', sys };
+    addPipeSeg(bossRoot, sys, r, ax, ay, az, bx, by, bz, pick);
+    bossClean.push(pick);
+  }
+  addClean('water', 0.28, -5.2, 1.5, 4.6, 5.2, 1.5, 4.6);
+  addClean('elec', 0.2, -5.4, 2.2, -5.0, -5.4, 2.2, 5.0);
+  addClean('hvac', 0.38, -4.0, 8.0, 3.6, 4.0, 8.0, 3.6);
+  addClean('elec', 0.18, -3.4, 0.5, -4.2, -3.4, 7.0, -4.2);
+  addClean('water', 0.26, 4.8, 1.4, -5.0, 4.8, 1.4, 2.0);
 
   const tweens = [];
   function launchPart(i) {
@@ -1035,15 +1302,6 @@
   let solvedN = 0;
   let quizOpen = false;
   let pendingDone = false;
-  let bossOn = false;
-  let bossDone = false;
-  let bossHits = 0;
-  const bossEl = document.getElementById('boss');
-  const BOSS_APPEAR = '主島出現哂一個混亂的 BIM Boss！根據提示，點擊錯誤、互相碰撞的管線。';
-  const BOSS_HINT = '碰撞檢測：找出互相穿越或重疊的管線。';
-  const BOSS_HIT = '發現一個碰撞點！';
-  const BOSS_MISS = '呢條管冇碰撞，再睇清楚。';
-  const BOSS_WIN = '你用碰撞檢測擊敗哂 BIM Boss！';
   let doneShown = false;
   let nearBlueprint = false;
   let time = 0;
@@ -1091,10 +1349,15 @@
   }
   function updateHud() {
     hudCount.textContent = '已組裝 ' + solvedN + '/10';
-    if (bossDone) hudNext.textContent = 'Boss 已擊敗';
-    else if (bossOn) hudNext.textContent = 'BIM Boss';
-    else if (solvedN >= 10) hudNext.textContent = '主島組合完成';
-    else hudNext.textContent = '島 ' + (active + 1) + ' · ' + QUIZ[active].name;
+    if (bossPhase === 'fight' || bossPhase === 'intro') {
+      hudNext.textContent = BOSS_COPY.hud(bossResolved, bossClashes.length);
+    } else if (bossPhase === 'won') {
+      hudNext.textContent = '已擊敗 BIM Boss';
+    } else if (solvedN >= 10) {
+      hudNext.textContent = '主島組合完成';
+    } else {
+      hudNext.textContent = '島 ' + (active + 1) + ' · ' + QUIZ[active].name;
+    }
   }
   function setHint(s) {
     if (s === hintMode) return;
@@ -1106,53 +1369,136 @@
     state = s;
     document.body.dataset.isl = s;
   }
-  function showBossMsg(text) {
-    bossEl.textContent = text;
-    bossEl.classList.add('show');
+  function refreshBossPanel() {
+    const total = bossClashes.length;
+    bossTitle.textContent = bossPhase === 'won' ? BOSS_COPY.defeatedTitle : BOSS_COPY.introTitle;
+    bossProgress.textContent = BOSS_COPY.progress(bossResolved, total);
+    bossHints.replaceChildren();
+    for (let i = 0; i < BOSS_COPY.clashes.length; i++) {
+      const c = BOSS_COPY.clashes[i];
+      const rec = bossClashes[i];
+      const li = document.createElement('li');
+      if (rec && rec.resolved) li.className = 'done';
+      const sys = document.createElement('div');
+      sys.className = 'sys';
+      sys.textContent = c.name;
+      const tx = document.createElement('div');
+      tx.textContent = rec && rec.resolved ? c.ok : c.hint;
+      li.appendChild(sys);
+      li.appendChild(tx);
+      bossHints.appendChild(li);
+    }
   }
-  function frameBoss() {
-    wantX = 0.1;
-    wantY = 3.35;
-    wantZ = 16.5;
-    wantLX = 0.1;
-    wantLY = 1.45;
-    wantLZ = 10.5;
+  function showBossToast(ok, text) {
+    if (ok) {
+      warnEl.classList.remove('show');
+      okEl.textContent = text;
+      okEl.classList.add('show');
+      okUntil = performance.now() + 1800;
+    } else {
+      okEl.classList.remove('show');
+      warnEl.textContent = text;
+      warnEl.classList.add('show');
+      flashEl.classList.add('show');
+      warnUntil = performance.now() + 1500;
+      shakeT = 0.64;
+    }
   }
-  function beginBoss() {
-    if (bossOn) return;
-    bossOn = true;
-    bossDone = false;
-    bossHits = 0;
-    boy.position.set(0.1, 0, 18.2);
-    boy.rotation.y = Math.PI;
-    yaw = 0;
-    pitch = 0.46;
-    bossGroup.visible = true;
-    showBossMsg(BOSS_APPEAR);
-    document.body.dataset.boss = 'on';
-    document.body.dataset.bossHits = '0';
-    frameBoss();
+  function startBossFinale() {
+    if (bossPhase !== 'off') return;
+    bossPhase = 'intro';
+    pendingDone = false;
+    bossResolved = 0;
+    bossScaleT = 0;
+    bossRoot.visible = true;
+    bossRoot.scale.setScalar(0.04);
+    cineX = 16;
+    cineY = 14;
+    cineZ = 20;
+    cineLX = 0;
+    cineLY = 4.3;
+    cineLZ = 0;
+    cineT = 2.6;
+    aimIsland = -1;
+    if (camera.fov !== 62) {
+      camera.fov = 62;
+      camera.updateProjectionMatrix();
+    }
+    bossPanel.classList.add('open');
+    refreshBossPanel();
     updateHud();
   }
-  function skipToBoss() {
-    for (let i = 0; i < 10; i++) {
-      ISLANDS[i].unlocked = true;
-      ISLANDS[i].solved = true;
-      if (shields[i]) shields[i].visible = false;
-      parts[i].visible = true;
-      parts[i].position.set(DOCK[i][0], DOCK[i][1], DOCK[i][2]);
-      parts[i].scale.set(1, 1, 1);
-      parts[i].rotation.set(0, 0, 0);
-      bridges[i].visible = true;
-      bridges[i].userData.g = 1;
-      bridges[i].scale.z = 1;
+  function resolveClash(id) {
+    const rec = bossClashes.find((c) => c.id === id);
+    if (!rec || rec.resolved) return false;
+    rec.resolved = true;
+    rec.marker.visible = false;
+    rec.markHit.visible = false;
+    bossResolved += 1;
+    for (let i = 0; i < bossPipeMeshes.length; i++) {
+      const p = bossPipeMeshes[i];
+      if (!p.pick || p.pick.kind !== 'clash' || p.pick.id !== id) continue;
+      p.mesh.material = MEP_FIXED[p.sys];
+      p.capA.material = MEP_FIXED[p.sys];
+      p.capB.material = MEP_FIXED[p.sys];
+      const lift = p.pick.side === 'a' ? rec.splitA : rec.splitB;
+      p.mesh.position.y += lift;
+      p.capA.position.y += lift;
+      p.capB.position.y += lift;
     }
-    solvedN = 10;
-    blueprint.visible = false;
-    arrow.visible = false;
-    active = -1;
-    pendingDone = true;
-    beginBoss();
+    const copy = BOSS_COPY.clashes.find((c) => c.id === id);
+    showBossToast(true, copy ? copy.ok : '已排除碰撞');
+    refreshBossPanel();
+    updateHud();
+    if (bossResolved >= bossClashes.length) defeatBoss();
+    return true;
+  }
+  function defeatBoss() {
+    if (bossPhase === 'won') return;
+    bossPhase = 'won';
+    coreMat.color.setHex(0x1a4a44);
+    coreMat.emissive.setHex(0x1ec9b0);
+    knotMat.color.setHex(0x2a6a62);
+    knotMat.emissive.setHex(0x0a3d38);
+    bossLight.color.setHex(0x66ffdd);
+    bossLight.intensity = 0.8;
+    refreshBossPanel();
+    updateHud();
+    doneTitle.textContent = BOSS_COPY.defeatedTitle;
+    doneBody.textContent = BOSS_COPY.defeatedBody;
+    setTimeout(() => {
+      if (bossPhase !== 'won') return;
+      okEl.classList.remove('show');
+      okUntil = 0;
+      doneShown = true;
+      doneEl.classList.add('open');
+    }, 1100);
+  }
+  function tryBossClick(ev) {
+    if (bossPhase !== 'fight' || cineT > 0) return;
+    const now = performance.now();
+    if (now < bossClickLock) return;
+    pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(bossPickables, false);
+    if (hits.length === 0) return;
+    let pick = null;
+    for (let i = 0; i < hits.length; i++) {
+      const ud = hits[i].object.userData.bossPick;
+      if (ud) { pick = ud; break; }
+    }
+    if (!pick) return;
+    if (pick.kind === 'clash') {
+      if (resolveClash(pick.id)) bossClickLock = now + 280;
+    } else if (pick.kind === 'clean') {
+      showBossToast(false, BOSS_COPY.wrong);
+      bossClickLock = now + 700;
+    }
+  }
+  function showDone() {
+    if (doneShown || bossPhase !== 'off') return;
+    startBossFinale();
   }
   let aimIsland = -1;
   function startCine(from, next) {
@@ -1262,9 +1608,6 @@
   computeFollow();
   camera.position.set(wantX, wantY, wantZ);
   camera.lookAt(wantLX, wantLY, wantLZ);
-  try {
-    if (sessionStorage.getItem('isl7-boss-preview') === '1') skipToBoss();
-  } catch (err) { /* storage unavailable */ }
 
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
@@ -1334,40 +1677,12 @@
     ptrX = e.clientX;
     ptrY = e.clientY;
   }, { passive: true });
-  function onBossTap() {
-    if (!bossOn || bossDone || cineT > 0) return false;
-    const hits = raycaster.intersectObject(bossGroup, true);
-    if (!hits.length) return true;
-    const mesh = hits[0].object;
-    if (mesh.userData.clash && mesh.userData.alive) {
-      mesh.userData.alive = false;
-      mesh.visible = false;
-      bossHits += 1;
-      document.body.dataset.bossHits = String(bossHits);
-      if (bossHits >= 4) {
-        bossDone = true;
-        document.body.dataset.boss = 'win';
-        showBossMsg(BOSS_WIN);
-        updateHud();
-      } else {
-        showBossMsg(BOSS_HIT);
-      }
-    } else if (!mesh.userData.clash) {
-      showBossMsg(BOSS_MISS);
-      shakeT = 0.64;
-    }
-    return true;
-  }
   function onTap(ev) {
-    if (quizOpen || cineT > 0) return;
-    pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(ev.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    if (bossOn) {
-      onBossTap();
+    if (bossPhase === 'fight') {
+      tryBossClick(ev);
       return;
     }
-    if (!blueprint.visible || active < 0) return;
+    if (quizOpen || cineT > 0 || !blueprint.visible || active < 0) return;
     const dx = boy.position.x - blueprint.position.x;
     const dz = boy.position.z - blueprint.position.z;
     if (dx * dx + dz * dz > NEAR2) return;
@@ -1485,6 +1800,10 @@
       warnEl.classList.remove('show');
       flashEl.classList.remove('show');
     }
+    if (okUntil && now > okUntil) {
+      okUntil = 0;
+      okEl.classList.remove('show');
+    }
 
     const locked = movementLocked();
     if (!locked) {
@@ -1579,6 +1898,28 @@
     }
     tickTweens(dt);
 
+    if (bossRoot.visible && bossPhase !== 'off') {
+      bossScaleT += dt;
+      const u = bossScaleT < 1.15 ? bossScaleT / 1.15 : 1;
+      const e = u * u * (3 - 2 * u);
+      const base = 0.04 + 0.96 * e;
+      bossRoot.scale.setScalar(base);
+      bossKnot.rotation.y = time * (bossPhase === 'won' ? 0.25 : 0.7);
+      bossKnot.rotation.x = Math.sin(time * 0.6) * 0.18;
+      const pulse = 0.08 * (1 - bossResolved / Math.max(1, bossClashes.length));
+      const health = 1 - bossResolved / Math.max(1, bossClashes.length);
+      bossCore.rotation.y = time * 0.55;
+      bossCore.scale.setScalar((bossPhase === 'won' ? 0.72 : 0.92 + health * 0.2) + Math.sin(time * 3.2) * pulse);
+      bossLight.intensity = bossPhase === 'won' ? 0.8 : 0.9 + health * 0.7 + Math.sin(time * 4) * 0.15;
+      for (let i = 0; i < bossClashes.length; i++) {
+        const m = bossClashes[i].marker;
+        if (!m.visible) continue;
+        const s = 0.85 + Math.sin(time * 4.4 + i) * 0.18;
+        m.scale.setScalar(s);
+        m.material.opacity = 0.72 + Math.sin(time * 5 + i) * 0.18;
+      }
+    }
+
     if (cineT > 0) {
       cineT -= dt;
       if (cineT < 0) cineT = 0;
@@ -1595,12 +1936,12 @@
           boy.rotation.y = Math.atan2(isl.x - boy.position.x, isl.z - boy.position.z);
           aimIsland = -1;
         }
-        if (pendingDone && tweens.length === 0) beginBoss();
+        if (bossPhase === 'intro') bossPhase = 'fight';
+        if (pendingDone && tweens.length === 0) showDone();
       }
-    } else if (bossOn && !bossDone) {
-      frameBoss();
     } else {
       computeFollow();
+      if (pendingDone && tweens.length === 0) showDone();
     }
     const ck = 1 - Math.exp(-4.8 * dt);
     camera.position.x += (wantX - camera.position.x) * ck;
@@ -1618,8 +1959,10 @@
     }
 
     let nextHint;
-    if (bossDone) nextHint = BOSS_WIN;
-    else if (bossOn) nextHint = BOSS_HINT;
+    if (bossPhase === 'won' && doneEl.classList.contains('open')) nextHint = BOSS_COPY.defeatedHint;
+    else if (bossPhase === 'won') nextHint = BOSS_COPY.defeatedHint;
+    else if (bossPhase === 'intro' || (bossPhase === 'fight' && cineT > 0)) nextHint = BOSS_COPY.introHint;
+    else if (bossPhase === 'fight') nextHint = BOSS_COPY.fightHint;
     else if (doneShown && doneEl.classList.contains('open')) nextHint = '十件構件已在主島組裝完成';
     else if (cineT > 0) nextHint = pendingDone ? '最後一件構件飛往主島' : '構件飛往主島，黃色箭嘴指向下一座島';
     else if (quizOpen) nextHint = '選擇一個答案';
@@ -1628,9 +1971,10 @@
     setHint(nextHint);
 
     let st = 'play';
-    if (bossDone) st = 'victory';
-    else if (bossOn) st = 'boss';
-    else if (doneEl.classList.contains('open')) st = 'done';
+    if (doneEl.classList.contains('open')) st = 'done';
+    else if (bossPhase === 'fight') st = 'boss';
+    else if (bossPhase === 'intro') st = 'boss-intro';
+    else if (bossPhase === 'won') st = 'boss-win';
     else if (cineT > 0) st = 'cine';
     else if (quizOpen) st = 'quiz';
     else if (nearBlueprint) st = 'near';
@@ -1643,6 +1987,42 @@
     }
     requestAnimationFrame(frame);
   }
+  if (DEBUG_BOSS) {
+    for (let i = 0; i < 10; i++) {
+      ISLANDS[i].unlocked = true;
+      ISLANDS[i].solved = true;
+      dismissShield(i);
+      const m = parts[i];
+      m.visible = true;
+      m.position.set(DOCK[i][0], DOCK[i][1], DOCK[i][2]);
+      m.scale.set(1, 1, 1);
+      m.rotation.set(0, 0, 0);
+      if (bridges[i]) {
+        bridges[i].userData.g = 1;
+        bridges[i].scale.z = 1;
+        bridges[i].visible = true;
+      }
+    }
+    solvedN = 10;
+    active = -1;
+    blueprint.visible = false;
+    arrow.visible = false;
+    boy.position.set(10, 0, 18);
+    yaw = Math.atan2(boy.position.x, boy.position.z);
+    boy.rotation.y = Math.atan2(-boy.position.x, -boy.position.z);
+    updateBasis();
+    computeFollow();
+    camera.position.set(wantX, wantY, wantZ);
+    camera.lookAt(wantLX, wantLY, wantLZ);
+    startBossFinale();
+    window.__BOSS_DEBUG = {
+      phase: () => bossPhase,
+      resolved: () => bossResolved,
+      resolve: (id) => resolveClash(id),
+      wrong: () => showBossToast(false, BOSS_COPY.wrong),
+    };
+  }
+
   requestAnimationFrame(frame);
   </script>
 </body>
