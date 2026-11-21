@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>BIM 浮空群島 — 10 Islands</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a1628;
+      font-family: "Noto Sans TC", "PingFang HK", "Microsoft JhengHei",
+                   "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 70%, #1a1548 0%, #0a1630 45%, #0a1628 100%);
+    }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    #title {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+      z-index: 10;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      user-select: none;
+    }
+    #title span {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: #f5f7fa;
+      opacity: 0.7;
+    }
+
+    #perf {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      z-index: 10;
+      color: #f5f7fa;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      opacity: 0.55;
+      pointer-events: none;
+      user-select: none;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+    }
+
+    #hint {
+      display: none;
+      position: fixed;
+      top: max(40px, calc(env(safe-area-inset-top) + 40px));
+      left: max(14px, env(safe-area-inset-left));
+      z-index: 10;
+      color: #f5f7fa;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      opacity: 0.62;
+      pointer-events: none;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+      text-align: left;
+      max-width: min(360px, calc(100vw - 160px));
+      line-height: 1.5;
+      user-select: none;
+    }
+
+    #dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 15;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(7, 12, 24, 0.92) 40%, rgba(7, 12, 24, 0.0));
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.2) transparent;
+    }
+    #dock button {
+      flex: 0 0 auto;
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      background: rgba(12, 22, 40, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #ffffff;
+      font-size: 13px;
+      font-family: inherit;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 0 0 2px var(--accent, transparent) inset;
+      border-left: 3px solid var(--accent, #4ecdc4);
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    #dock button:hover { background: rgba(20, 36, 60, 0.92); }
+    #dock button.active {
+      background: rgba(30, 52, 84, 0.95);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+    #dock button[data-id="overview"] {
+      border-left-color: #9bb4d0;
+      --accent: #9bb4d0;
+    }
+
+    #popup {
+      position: fixed;
+      top: max(48px, calc(env(safe-area-inset-top) + 36px));
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      z-index: 20;
+      width: min(420px, calc(100vw - 32px));
+      padding: 22px 24px 20px;
+      border-radius: 14px;
+      background: rgba(12, 22, 40, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+      pointer-events: none;
+    }
+    #popup.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    #popup::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 18px;
+      right: 18px;
+      height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: var(--accent, #4ecdc4);
+    }
+    #popup .close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f7fa;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #popup .close:hover { background: rgba(255, 255, 255, 0.16); }
+    #popup h2 {
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin: 0 28px 12px 0;
+      line-height: 1.35;
+    }
+    #popup p {
+      color: #f5f7fa;
+      font-size: 14px;
+      line-height: 1.7;
+      margin: 0;
+      opacity: 0.92;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-wrap"></div>
+  <div id="title">BIM 浮空群島<span>點擊島嶼或用下方按鈕飛過去</span></div>
+  <div id="perf">draws: —</div>
+  <div id="hint">十座 BIM 主題浮島同一場景。點島或建築睇介紹；按鈕可平滑飛去每個島。</div>
+  <div id="dock" role="navigation" aria-label="島嶼切換"></div>
+  <div id="popup" role="dialog" aria-modal="true" aria-labelledby="popup-title">
+    <button class="close" type="button" aria-label="關閉">×</button>
+    <h2 id="popup-title"></h2>
+    <p id="popup-body"></p>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+    console.info('isl2');
+
+    const IS_MOBILE = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 700;
+    const DPR = Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 1.1 : 1.5);
+
+    const ISLANDS = [
+      {
+        id: 'mep',
+        name: '機電島',
+        accent: '#4ecdc4',
+        body: '施工前用 BIM 三維模型，自動檢查機電管線同結構、建築有冇撞位。提早搵到交叉、淨高唔夠或安裝位唔夠，減少現場返工同延誤。本島保留原有青綠機電樓同琥珀 4D 樓。',
+        palette: {
+          rock: 0x5a6578, rockDark: 0x3d4656,
+          grass: 0x3d8b5a, grassEdge: 0x2f6e48, path: 0x8a9aaa,
+        },
+        shape: 'original',
+        buildings: [
+          { color: 0x2a9d8f, emissive: 0x3ecfc0, storyTint: 0x1a7a70, x: -1.35, z: 0.15, w: 1.05, d: 0.95, h: 2.05, label: 'MEP 碰撞檢測' },
+          { color: 0xe08a2c, emissive: 0xf0a04b, storyTint: 0xb86a18, x: 1.25, z: -0.2, w: 1.15, d: 1.0, h: 2.55, label: '施工模擬／4D' },
+        ],
+      },
+      {
+        id: 'struct',
+        name: '結構島',
+        accent: '#7ea0c8',
+        body: '結構分析同鋼筋混凝土模型喺呢度交匯。可預視梁柱牆版受力、構件銜接同預製組裝，確保結構安全同施工可行。',
+        palette: {
+          rock: 0x4a5568, rockDark: 0x2f3644,
+          grass: 0x4a6b5c, grassEdge: 0x355246, path: 0x8a96a8,
+        },
+        shape: 'ridge',
+        buildings: [
+          { color: 0x5b7190, emissive: 0x8eb0d4, storyTint: 0x3d516c, x: -1.1, z: 0.1, w: 1.3, d: 1.1, h: 1.7, label: '結構模型' },
+          { color: 0x8a9aac, emissive: 0xc0d0e0, storyTint: 0x5a6a7a, x: 1.3, z: -0.3, w: 0.9, d: 0.9, h: 2.8, label: '梁柱分析' },
+        ],
+      },
+      {
+        id: 'arch',
+        name: '建築島',
+        accent: '#e8d5b5',
+        body: '建築設計同空間規劃嘅浮島。立面、室內同規範喺同一個模型入面整合，方便同機電、結構早對位。',
+        palette: {
+          rock: 0x8a7a68, rockDark: 0x5c5044,
+          grass: 0x6b8a4a, grassEdge: 0x4e6836, path: 0xc4b8a4,
+        },
+        shape: 'round',
+        buildings: [
+          { color: 0xe8dcc8, emissive: 0xfff3d6, storyTint: 0xc4b49a, x: -0.9, z: 0.4, w: 1.2, d: 1.0, h: 1.9, label: '建築量體' },
+          { color: 0xd4c2a0, emissive: 0xf0e0c0, storyTint: 0xa89070, x: 1.15, z: -0.35, w: 1.0, d: 1.15, h: 2.35, label: '空間規劃', roof: 'slope' },
+        ],
+      },
+      {
+        id: 'fourd',
+        name: '施工島',
+        accent: '#f0a04b',
+        body: '4D 施工模擬把 3D 模型同工期計劃一齊播，預先睇清工序銜接、吊運路徑同資源點擺，早發現時序衝突同安全隱患。',
+        palette: {
+          rock: 0x5a5348, rockDark: 0x3a342c,
+          grass: 0x6a7a40, grassEdge: 0x4e5a2e, path: 0xb8a070,
+        },
+        shape: 'yard',
+        buildings: [
+          { color: 0xd97720, emissive: 0xf0a04b, storyTint: 0xa85a10, x: -1.2, z: 0.3, w: 1.4, d: 0.85, h: 1.2, label: '工地辦公室' },
+          { color: 0xe08a2c, emissive: 0xffc060, storyTint: 0xb86a18, x: 0.95, z: -0.15, w: 0.7, d: 0.7, h: 1.5, label: '臨時設施' },
+        ],
+        extras: 'crane',
+      },
+      {
+        id: 'cost',
+        name: '成本島',
+        accent: '#d4a017',
+        body: '5D 把工程數量同預算連到模型。變更即時反映成本，數量計算同預算追蹤更準，減少漏項同超支。',
+        palette: {
+          rock: 0x6a6458, rockDark: 0x454038,
+          grass: 0x3d7a58, grassEdge: 0x2c5a40, path: 0xc2b070,
+        },
+        shape: 'hex',
+        buildings: [
+          { color: 0xc9a227, emissive: 0xf0d060, storyTint: 0x8a7010, x: -0.85, z: 0.2, w: 1.15, d: 1.15, h: 1.85, label: '數量計算' },
+          { color: 0xe6c35c, emissive: 0xffe08a, storyTint: 0xb89620, x: 1.2, z: -0.25, w: 0.95, d: 0.9, h: 2.4, label: '預算追蹤' },
+        ],
+      },
+      {
+        id: 'green',
+        name: '永續島',
+        accent: '#5ecf8a',
+        body: '能耗、日照、通風同碳排放分析，用模型預先優化綠建策略，讓設計更節能、更舒適。',
+        palette: {
+          rock: 0x4a6a50, rockDark: 0x2e4634,
+          grass: 0x2f9d58, grassEdge: 0x217a42, path: 0x8aaa80,
+        },
+        shape: 'organic',
+        buildings: [
+          { color: 0x2a9d6a, emissive: 0x5ecf8a, storyTint: 0x1a7048, x: -1.0, z: 0.25, w: 1.25, d: 1.05, h: 1.45, label: '能耗分析' },
+          { color: 0x3ecf9a, emissive: 0xa0ffd0, storyTint: 0x2a8a68, x: 1.05, z: -0.2, w: 1.0, d: 1.0, h: 2.0, label: '綠建策略', roof: 'dome' },
+        ],
+      },
+      {
+        id: 'fm',
+        name: '設施島',
+        accent: '#a78bfa',
+        body: '設施管理（FM／7D）把營運、維修同資產資訊留喺模型入面，方便日後查找設備、安排保養同空間管理。',
+        palette: {
+          rock: 0x5a4e62, rockDark: 0x3a3244,
+          grass: 0x4a6a58, grassEdge: 0x355044, path: 0x9a90a8,
+        },
+        shape: 'plateau',
+        buildings: [
+          { color: 0x6d5a9a, emissive: 0xa78bfa, storyTint: 0x4a3d70, x: -1.4, z: 0.15, w: 1.35, d: 1.0, h: 1.75, label: '資產資訊' },
+          { color: 0x8b6cc4, emissive: 0xc4b0ff, storyTint: 0x5c48a0, x: 1.15, z: -0.35, w: 1.1, d: 1.2, h: 2.2, label: '營運維修' },
+        ],
+      },
+      {
+        id: 'safety',
+        name: '安全島',
+        accent: '#f5c542',
+        body: '施工安全同風險預控：預視危險區域、臨時通道同動線衝突，減少現場意外，讓安全交底更直觀。',
+        palette: {
+          rock: 0x6a4038, rockDark: 0x452820,
+          grass: 0x7a6a3a, grassEdge: 0x5a4c28, path: 0xb8a060,
+        },
+        shape: 'angular',
+        buildings: [
+          { color: 0xe6b422, emissive: 0xffe066, storyTint: 0xa88410, x: -1.0, z: 0.2, w: 1.15, d: 0.95, h: 1.55, label: '安全交底' },
+          { color: 0xd45a2a, emissive: 0xff8a50, storyTint: 0x8a3010, x: 1.15, z: -0.2, w: 0.75, d: 0.75, h: 2.65, label: '觀察塔' },
+        ],
+      },
+      {
+        id: 'survey',
+        name: '測量島',
+        accent: '#5ec8e8',
+        body: '測量同現況建模：點雲、GIS 同竣工模型對照，把現場同設計疊喺一齊，偏差一目了然。',
+        palette: {
+          rock: 0x4a6070, rockDark: 0x2e404c,
+          grass: 0x3d7a68, grassEdge: 0x2c5a4c, path: 0x90b0b8,
+        },
+        shape: 'pointed',
+        buildings: [
+          { color: 0x2a8aaa, emissive: 0x5ec8e8, storyTint: 0x1a6078, x: -0.7, z: 0.35, w: 1.0, d: 1.0, h: 1.6, label: '點雲對照' },
+          { color: 0x3ab0c8, emissive: 0x90e8ff, storyTint: 0x2a7a8a, x: 1.1, z: -0.4, w: 0.7, d: 0.7, h: 3.1, label: '測量塔' },
+        ],
+      },
+      {
+        id: 'cde',
+        name: '協作島',
+        accent: '#e879a8',
+        body: '共通數據環境（CDE）係跨專業協作嘅中樞。模型、圖則同變更喺同一平台共享，版本清楚，溝通更快。',
+        palette: {
+          rock: 0x6a4a5c, rockDark: 0x46303e,
+          grass: 0x4a6a58, grassEdge: 0x385044, path: 0xc090a8,
+        },
+        shape: 'twin',
+        buildings: [
+          { color: 0xc45a88, emissive: 0xe879a8, storyTint: 0x8a3a60, x: -1.35, z: 0.15, w: 0.95, d: 0.95, h: 1.8, label: 'CDE 平台' },
+          { color: 0xe879a8, emissive: 0xffb0d0, storyTint: 0xb05078, x: 0.15, z: -0.15, w: 0.85, d: 0.85, h: 1.5, label: '版本管理' },
+          { color: 0xa04070, emissive: 0xd070a0, storyTint: 0x702848, x: 1.4, z: 0.35, w: 0.85, d: 0.9, h: 2.05, label: '跨專業協同' },
+        ],
+      },
+    ];
+
+    // Fix typo if I accidentally left 0x8a9aac
+    ISLANDS[1].buildings[1].color = 0x8a9aac;
+
+    const RING = 15;
+    for (let i = 0; i < ISLANDS.length; i++) {
+      const a = (i / ISLANDS.length) * Math.PI * 2 - Math.PI / 2 - Math.PI / 10;
+      const r = RING + (i % 3) * 1.4;
+      ISLANDS[i].x = Math.cos(a) * r;
+      ISLANDS[i].z = Math.sin(a) * r;
+      ISLANDS[i].phase = i * 0.62;
+    }
+
+    // --- Shared geometries (never mutate; always clone before transform) ---
+    const GEO = {
+      box: new THREE.BoxGeometry(1, 1, 1),
+      ico: new THREE.IcosahedronGeometry(1, 0),
+      dod: new THREE.DodecahedronGeometry(1, 0),
+      cyl8: new THREE.CylinderGeometry(1, 1, 1, 8),
+      cyl6: new THREE.CylinderGeometry(1, 1, 1, 6),
+      cone: new THREE.ConeGeometry(1, 1, 7),
+      circle: new THREE.CircleGeometry(1, 20),
+    };
+
+    const _col = new THREE.Color();
+    const _pos = new THREE.Vector3();
+    const _quat = new THREE.Quaternion();
+    const _scl = new THREE.Vector3();
+    const _eul = new THREE.Euler();
+    const _mat4 = new THREE.Matrix4();
+
+    function colorize(srcGeo, hex, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) {
+      let g = srcGeo.clone();
+      _pos.set(x, y, z);
+      _eul.set(rx, ry, rz);
+      _quat.setFromEuler(_eul);
+      _scl.set(sx, sy, sz);
+      _mat4.compose(_pos, _quat, _scl);
+      g.applyMatrix4(_mat4);
+      if (g.index) {
+        const ni = g.toNonIndexed();
+        g.dispose();
+        g = ni;
+      }
+      g.deleteAttribute('uv');
+      g.deleteAttribute('uv1');
+      g.deleteAttribute('uv2');
+      if (!g.attributes.normal) g.computeVertexNormals();
+      _col.setHex(hex);
+      const n = g.attributes.position.count;
+      const arr = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        arr[i * 3] = _col.r;
+        arr[i * 3 + 1] = _col.g;
+        arr[i * 3 + 2] = _col.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+      return g;
+    }
+
+    function mergeAndDispose(list) {
+      if (!list.length) return null;
+      const merged = mergeGeometries(list, false);
+      for (const g of list) g.dispose();
+      return merged;
+    }
+
+    const terrainMat = new THREE.MeshStandardMaterial({
+      roughness: 0.9,
+      metalness: 0.05,
+      flatShading: true,
+      vertexColors: true,
+    });
+    const buildingMat = new THREE.MeshStandardMaterial({
+      roughness: 0.45,
+      metalness: 0.18,
+      flatShading: true,
+      vertexColors: true,
+    });
+    const windowMat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+    });
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xd4a017,
+      emissive: 0xf0a020,
+      emissiveIntensity: 0.55,
+      metalness: 0.85,
+      roughness: 0.28,
+      flatShading: true,
+    });
+    const goldCoreMat = new THREE.MeshStandardMaterial({
+      color: 0xb8860b,
+      emissive: 0xffc040,
+      emissiveIntensity: 0.35,
+      metalness: 0.9,
+      roughness: 0.25,
+    });
+
+    function addRocksOriginal(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      const B = GEO.box, I = GEO.ico, D = GEO.dod;
+      terrain.push(
+        colorize(B, r, 0, 0.15, 0, 4.6, 1.1, 3.8, 0, 0.12, 0),
+        colorize(B, d, -0.3, -0.55, 0.2, 3.8, 0.9, 3.2, 0.05, -0.2, 0.04),
+        colorize(I, r, 1.8, -0.2, -0.9, 1.4, 1.1, 1.3, 0.3, 0.5, 0.1),
+        colorize(I, d, -2.0, -0.35, 0.7, 1.5, 1.2, 1.4, 0.4, -0.8, 0.2),
+        colorize(D, r, 0.6, -0.9, 1.4, 1.3, 1.0, 1.2, 0.2, 0.9, 0.15),
+        colorize(D, d, -0.8, -1.0, -1.3, 1.4, 1.1, 1.3, 0.5, -0.4, 0.1),
+        colorize(B, r, 2.2, 0.05, 0.8, 1.2, 0.8, 1.5, 0, 0.4, 0.08),
+        colorize(B, d, -2.3, -0.1, -0.6, 1.1, 0.85, 1.4, 0.05, -0.35, -0.05),
+        colorize(I, d, 0.2, -1.55, 0.1, 1.8, 1.4, 1.6, 0.2, 0.3, 0),
+        colorize(D, d, -0.5, -1.85, -0.3, 1.2, 1.0, 1.1, 0.6, 1.1, 0.2),
+        colorize(GEO.cyl8, p.grass, 0.05, 0.82, 0.05, 2.35, 0.28, 2.35, 0, 0.18, 0),
+        colorize(B, p.grassEdge, -0.15, 0.78, -0.1, 3.6, 0.22, 2.9, 0, -0.08, 0),
+        colorize(B, p.path, 0, 0.94, 0.55, 2.4, 0.04, 0.45, 0, 0, 0),
+      );
+    }
+
+    function addRocksRidge(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.box, r, 0, 0.1, 0, 5.6, 1.0, 2.8, 0, 0.08, 0),
+        colorize(GEO.box, d, 0.2, -0.6, 0.1, 4.8, 0.85, 2.3, 0.04, -0.1, 0.03),
+        colorize(GEO.ico, r, 2.5, -0.15, 0.3, 1.2, 1.0, 1.1, 0.2, 0.4, 0),
+        colorize(GEO.ico, d, -2.6, -0.25, -0.2, 1.3, 1.05, 1.15, 0.3, -0.5, 0.1),
+        colorize(GEO.dod, d, 0, -1.4, 0, 1.6, 1.3, 1.4, 0.3, 0.2, 0),
+        colorize(GEO.box, r, 1.2, -0.9, 0.8, 1.4, 0.9, 1.2, 0.1, 0.3, 0),
+        colorize(GEO.cyl8, p.grass, 0, 0.78, 0, 2.0, 0.24, 1.4, 0, 0.1, 0),
+        colorize(GEO.box, p.grassEdge, 0, 0.74, 0, 4.6, 0.2, 2.1, 0, 0.06, 0),
+        colorize(GEO.box, p.path, 0.1, 0.88, 0.35, 2.8, 0.04, 0.4, 0, 0, 0),
+      );
+    }
+
+    function addRocksRound(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.dod, r, 0, 0.05, 0, 2.6, 1.15, 2.6, 0.1, 0.2, 0),
+        colorize(GEO.ico, d, 0.2, -0.7, 0.1, 2.2, 1.1, 2.2, 0.2, 0.4, 0.1),
+        colorize(GEO.ico, r, 1.7, -0.1, 0.8, 1.3, 1.0, 1.2, 0.3, 0.6, 0),
+        colorize(GEO.ico, d, -1.8, -0.2, -0.7, 1.35, 1.05, 1.25, 0.4, -0.5, 0.1),
+        colorize(GEO.dod, d, 0, -1.55, 0, 1.5, 1.2, 1.4, 0.5, 0.3, 0),
+        colorize(GEO.cyl8, p.grass, 0, 0.8, 0, 2.45, 0.26, 2.45, 0, 0.2, 0),
+        colorize(GEO.box, p.grassEdge, 0.1, 0.76, 0, 3.1, 0.18, 3.0, 0, -0.15, 0),
+        colorize(GEO.box, p.path, 0.1, 0.92, 0.3, 2.1, 0.04, 0.4, 0, 0.2, 0),
+      );
+    }
+
+    function addRocksYard(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.box, r, 0, 0.12, 0, 4.8, 0.95, 4.2, 0, 0.05, 0),
+        colorize(GEO.box, d, -0.2, -0.55, 0, 4.0, 0.8, 3.4, 0.05, -0.08, 0),
+        colorize(GEO.ico, r, 2.1, -0.15, 1.4, 1.2, 1.0, 1.2, 0.2, 0.4, 0),
+        colorize(GEO.ico, d, -2.2, -0.2, -1.3, 1.25, 1.0, 1.2, 0.3, -0.4, 0),
+        colorize(GEO.dod, d, 0.3, -1.35, 0.2, 1.7, 1.2, 1.5, 0.2, 0.3, 0),
+        colorize(GEO.box, p.grass, 0, 0.76, 0, 4.0, 0.22, 3.4, 0, 0.04, 0),
+        colorize(GEO.cyl8, p.grassEdge, 0.2, 0.8, 0.15, 1.8, 0.18, 1.8, 0, 0, 0),
+        colorize(GEO.box, p.path, 0, 0.9, 0.6, 2.6, 0.04, 0.5, 0, 0, 0),
+      );
+    }
+
+    function addRocksHex(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.cyl6, r, 0, 0.05, 0, 2.6, 1.15, 2.6, 0, 0.1, 0),
+        colorize(GEO.cyl6, d, 0.1, -0.7, 0, 2.15, 0.9, 2.15, 0, 0.2, 0),
+        colorize(GEO.ico, r, 2.0, -0.15, 0.4, 1.15, 0.95, 1.1, 0.2, 0.4, 0),
+        colorize(GEO.ico, d, -1.9, -0.2, -0.5, 1.2, 1.0, 1.15, 0.3, -0.3, 0),
+        colorize(GEO.dod, d, 0, -1.5, 0, 1.4, 1.15, 1.3, 0.4, 0.2, 0),
+        colorize(GEO.cyl6, p.grass, 0, 0.78, 0, 2.2, 0.24, 2.2, 0, 0.08, 0),
+        colorize(GEO.box, p.path, 0.15, 0.92, 0.35, 1.8, 0.04, 0.38, 0, 0.15, 0),
+      );
+    }
+
+    function addRocksOrganic(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.ico, r, 0, 0.1, 0, 2.5, 1.2, 2.4, 0.15, 0.3, 0.05),
+        colorize(GEO.dod, d, 0.15, -0.65, 0.1, 2.1, 1.05, 2.0, 0.25, 0.5, 0.1),
+        colorize(GEO.ico, r, 1.9, -0.05, 0.7, 1.35, 1.15, 1.3, 0.4, 0.7, 0.1),
+        colorize(GEO.ico, r, -1.7, -0.1, -0.8, 1.3, 1.1, 1.25, 0.3, -0.6, 0.15),
+        colorize(GEO.dod, d, 0.4, -1.45, 0.2, 1.5, 1.2, 1.4, 0.5, 0.4, 0),
+        colorize(GEO.ico, d, -0.6, -1.7, -0.3, 1.1, 1.0, 1.05, 0.6, 1.0, 0.2),
+        colorize(GEO.cyl8, p.grass, 0, 0.82, 0, 2.3, 0.26, 2.2, 0, 0.25, 0),
+        colorize(GEO.cyl8, p.grassEdge, 0.3, 0.78, 0.2, 1.6, 0.2, 1.5, 0, -0.2, 0),
+        colorize(GEO.box, p.path, 0, 0.94, 0.4, 2.0, 0.04, 0.36, 0, 0.1, 0),
+      );
+    }
+
+    function addRocksPlateau(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.box, r, 0, 0.2, 0, 5.2, 0.85, 4.4, 0, 0.04, 0),
+        colorize(GEO.box, d, 0, -0.5, 0, 4.4, 0.75, 3.6, 0.03, -0.06, 0),
+        colorize(GEO.box, r, 2.3, 0.0, 1.5, 1.5, 0.7, 1.4, 0, 0.2, 0),
+        colorize(GEO.box, d, -2.4, -0.1, -1.3, 1.4, 0.75, 1.5, 0.04, -0.2, 0),
+        colorize(GEO.ico, d, 0.2, -1.3, 0.1, 1.8, 1.2, 1.6, 0.2, 0.3, 0),
+        colorize(GEO.box, p.grass, 0, 0.74, 0, 4.6, 0.2, 3.8, 0, 0.03, 0),
+        colorize(GEO.box, p.grassEdge, 1.6, 0.78, 1.1, 1.6, 0.16, 1.4, 0, 0.15, 0),
+        colorize(GEO.box, p.path, 0, 0.88, 0.5, 3.0, 0.04, 0.42, 0, 0, 0),
+      );
+    }
+
+    function addRocksAngular(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.box, r, 0, 0.1, 0, 4.2, 1.15, 3.4, 0, 0.35, 0.05),
+        colorize(GEO.box, d, 0.3, -0.6, 0, 3.4, 0.9, 2.7, 0.08, 0.2, 0.04),
+        colorize(GEO.box, r, 1.9, 0.05, -1.0, 1.5, 1.1, 1.2, 0, 0.5, 0.1),
+        colorize(GEO.box, d, -2.0, -0.15, 0.9, 1.4, 1.0, 1.3, 0.1, -0.4, 0),
+        colorize(GEO.ico, d, 0, -1.5, 0, 1.5, 1.3, 1.4, 0.3, 0.4, 0),
+        colorize(GEO.box, p.grass, 0, 0.8, 0, 3.4, 0.22, 2.6, 0, 0.32, 0),
+        colorize(GEO.box, p.path, 0.1, 0.94, 0.4, 2.0, 0.04, 0.38, 0, 0.32, 0),
+      );
+    }
+
+    function addRocksPointed(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.cone, r, 0, -0.15, 0, 2.6, 2.2, 2.6, 0, 0.1, 0),
+        colorize(GEO.ico, d, 0.2, -1.1, 0.1, 1.8, 1.3, 1.7, 0.2, 0.3, 0),
+        colorize(GEO.box, r, 1.6, 0.0, 0.7, 1.3, 0.9, 1.1, 0, 0.4, 0.1),
+        colorize(GEO.dod, d, -1.5, -0.2, -0.6, 1.2, 1.0, 1.15, 0.3, -0.4, 0),
+        colorize(GEO.cyl8, p.grass, 0, 0.82, 0, 2.0, 0.24, 1.7, 0, 0.15, 0),
+        colorize(GEO.box, p.grassEdge, 0.8, 0.78, 0.4, 2.0, 0.18, 1.4, 0, 0.3, 0),
+        colorize(GEO.box, p.path, 0.15, 0.94, 0.35, 1.6, 0.04, 0.34, 0, 0.2, 0),
+      );
+    }
+
+    function addRocksTwin(p, terrain) {
+      const { rock: r, rockDark: d } = p;
+      terrain.push(
+        colorize(GEO.box, r, -1.3, 0.12, 0, 3.0, 1.0, 3.0, 0, 0.1, 0),
+        colorize(GEO.box, r, 1.4, 0.08, 0.3, 2.8, 0.95, 2.8, 0, -0.12, 0),
+        colorize(GEO.box, d, -1.3, -0.55, 0, 2.4, 0.8, 2.4, 0.04, 0.08, 0),
+        colorize(GEO.box, d, 1.4, -0.6, 0.3, 2.2, 0.75, 2.2, 0.04, -0.1, 0),
+        colorize(GEO.ico, d, 0.1, -1.35, 0.15, 1.6, 1.2, 1.5, 0.3, 0.2, 0),
+        colorize(GEO.box, p.grass, -1.3, 0.76, 0, 2.5, 0.2, 2.4, 0, 0.08, 0),
+        colorize(GEO.box, p.grassEdge, 1.4, 0.72, 0.3, 2.3, 0.2, 2.2, 0, -0.1, 0),
+        colorize(GEO.box, p.path, 0.05, 0.88, 0.15, 2.4, 0.05, 0.36, 0, 0.05, 0),
+      );
+    }
+
+    const SHAPE_FN = {
+      original: addRocksOriginal,
+      ridge: addRocksRidge,
+      round: addRocksRound,
+      yard: addRocksYard,
+      hex: addRocksHex,
+      organic: addRocksOrganic,
+      plateau: addRocksPlateau,
+      angular: addRocksAngular,
+      pointed: addRocksPointed,
+      twin: addRocksTwin,
+    };
+
+    function addBuilding(b, buildingGeos, windowGeos) {
+      const { color, emissive, storyTint, x, z, w, d, h } = b;
+      buildingGeos.push(colorize(GEO.box, color, x, 0.92 + h / 2, z, w, h, d));
+      if (b.roof === 'slope') {
+        buildingGeos.push(colorize(GEO.box, storyTint, x, 0.92 + h + 0.16, z, w * 1.12, 0.22, d * 1.12, 0, 0, 0.28));
+      } else if (b.roof === 'dome') {
+        buildingGeos.push(colorize(GEO.ico, storyTint, x, 0.92 + h + 0.28, z, w * 0.55, 0.45, d * 0.55));
+      } else {
+        buildingGeos.push(colorize(GEO.box, storyTint, x, 0.92 + h + 0.06, z, w * 1.08, 0.12, d * 1.08));
+      }
+      if (h > 2.2) {
+        buildingGeos.push(colorize(GEO.cyl6, 0xcccccc, x, 0.92 + h + 0.35, z, 0.03, 0.45, 0.03));
+      }
+      const floors = Math.max(2, Math.min(5, Math.floor(h / 0.55)));
+      for (let i = 0; i < floors; i++) {
+        const wy = 0.92 + 0.35 + i * (h / floors);
+        windowGeos.push(
+          colorize(GEO.box, emissive, x, wy, z + d / 2 + 0.01, w * 0.72, 0.18, 0.04),
+          colorize(GEO.box, emissive, x, wy, z - (d / 2 + 0.01), w * 0.72, 0.18, 0.04),
+          colorize(GEO.box, emissive, x + w / 2 + 0.01, wy, z, 0.04, 0.18, d * 0.72),
+          colorize(GEO.box, emissive, x - (w / 2 + 0.01), wy, z, 0.04, 0.18, d * 0.72),
+        );
+      }
+    }
+
+    function addCrane(cfg, buildingGeos, windowGeos) {
+      const c = 0x4a5560;
+      const y0 = 0.92;
+      buildingGeos.push(
+        colorize(GEO.cyl6, c, 1.7, y0 + 1.7, -1.0, 0.07, 3.4, 0.07),
+        colorize(GEO.box, 0xc0c8d0, 0.7, y0 + 3.25, -1.0, 2.2, 0.08, 0.1),
+        colorize(GEO.box, 0xc0c8d0, 1.7, y0 + 3.15, -1.0, 0.12, 0.35, 0.12),
+        colorize(GEO.box, 0xf0a04b, -0.2, y0 + 2.85, -1.0, 0.18, 0.25, 0.18),
+      );
+      windowGeos.push(colorize(GEO.box, 0xf0a04b, -0.2, y0 + 2.85, -1.0, 0.2, 0.2, 0.2));
+    }
+
+    function makeTreasure(group) {
+      const g = new THREE.Group();
+      g.name = 'treasure';
+      g.userData.islandId = 'mep';
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 8, 16), goldMat);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.06, 8), goldCoreMat);
+      hub.rotation.x = Math.PI / 2;
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.14, 6), goldCoreMat);
+      shaft.position.z = 0.08;
+      shaft.rotation.x = Math.PI / 2;
+      g.add(rim, hub, shaft);
+      for (let i = 0; i < 6; i++) {
+        const tooth = new THREE.Mesh(GEO.box, goldMat);
+        const a = (i / 6) * Math.PI * 2;
+        tooth.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
+        tooth.rotation.z = a;
+        tooth.scale.set(0.045, 0.05, 0.04);
+        g.add(tooth);
+      }
+      g.position.set(-2.05, 1.02, 0.85);
+      g.rotation.set(0.55, 0.8, 0.25);
+      group.add(g);
+      return g;
+    }
+
+    function buildIsland(cfg) {
+      const group = new THREE.Group();
+      group.name = cfg.id;
+      group.userData.islandId = cfg.id;
+      const terrain = [];
+      const buildings = [];
+      const windows = [];
+      (SHAPE_FN[cfg.shape] || addRocksOriginal)(cfg.palette, terrain);
+      for (const b of cfg.buildings) addBuilding(b, buildings, windows);
+      if (cfg.extras === 'crane') addCrane(cfg, buildings, windows);
+
+      const tGeo = mergeAndDispose(terrain);
+      const bGeo = mergeAndDispose(buildings);
+      const wGeo = mergeAndDispose(windows);
+      if (tGeo) {
+        const m = new THREE.Mesh(tGeo, terrainMat);
+        m.userData.islandId = cfg.id;
+        group.add(m);
+      }
+      if (bGeo) {
+        const m = new THREE.Mesh(bGeo, buildingMat);
+        m.userData.islandId = cfg.id;
+        group.add(m);
+      }
+      if (wGeo) {
+        const m = new THREE.Mesh(wGeo, windowMat);
+        m.userData.islandId = cfg.id;
+        group.add(m);
+      }
+      const shadow = new THREE.Mesh(GEO.circle, shadowMat);
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = -2.4;
+      shadow.scale.set(3.2, 3.2, 3.2);
+      shadow.userData.islandId = cfg.id;
+      group.add(shadow);
+
+      group.position.set(cfg.x, 0, cfg.z);
+      return group;
+    }
+
+    // --- Renderer ---
+    const wrap = document.getElementById('canvas-wrap');
+    const renderer = new THREE.WebGLRenderer({
+      antialias: !IS_MOBILE,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(DPR);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x0a1628, 1);
+    renderer.shadowMap.enabled = false;
+    wrap.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a1628);
+    scene.fog = new THREE.Fog(0x0a1628, 40, 140);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.5,
+      220
+    );
+    const OVERVIEW_POS = new THREE.Vector3(0, 54, 5);
+    const OVERVIEW_TARGET = new THREE.Vector3(0, 0, 0);
+    camera.position.copy(OVERVIEW_POS);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 6;
+    controls.maxDistance = 90;
+    controls.maxPolarAngle = Math.PI * 0.48;
+    controls.minPolarAngle = Math.PI * 0.03;
+    controls.target.copy(OVERVIEW_TARGET);
+    controls.enablePan = false;
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0x6a8ab0, 0.62));
+    const sun = new THREE.DirectionalLight(0xfff2dd, 1.15);
+    sun.position.set(18, 36, 12);
+    sun.castShadow = false;
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x4a6a9a, 0.38);
+    fill.position.set(-16, 14, -10);
+    scene.add(fill);
+
+    function makeSkyGradientTexture() {
+      const c = document.createElement('canvas');
+      c.width = 2;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0.0, '#050814');
+      g.addColorStop(0.35, '#0a1630');
+      g.addColorStop(0.62, '#1a1548');
+      g.addColorStop(0.78, '#2a2458');
+      g.addColorStop(0.88, '#3a2a4a');
+      g.addColorStop(0.94, '#1e2848');
+      g.addColorStop(1.0, '#0a1228');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 2, 256);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearFilter;
+      return tex;
+    }
+
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(140, IS_MOBILE ? 16 : 24, IS_MOBILE ? 12 : 16),
+      new THREE.MeshBasicMaterial({
+        map: makeSkyGradientTexture(),
+        side: THREE.BackSide,
+        fog: false,
+        depthWrite: false,
+      })
+    );
+    scene.add(sky);
+
+    const starCount = IS_MOBILE ? 280 : 560;
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * Math.PI * 2;
+      const phi = Math.acos(1 - v * 0.92);
+      const r = 70 + Math.random() * 50;
+      starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPos[i * 3 + 1] = Math.max(r * Math.cos(phi) - 4, -8);
+      starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(
+      starGeo,
+      new THREE.PointsMaterial({
+        color: 0xdce8ff,
+        size: 0.22,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+        sizeAttenuation: true,
+        fog: false,
+      })
+    );
+    scene.add(stars);
+
+    const particleCount = IS_MOBILE ? 0 : 40;
+    let particles = null;
+    if (particleCount) {
+      const pPos = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i++) {
+        pPos[i * 3] = (Math.random() - 0.5) * 70;
+        pPos[i * 3 + 1] = Math.random() * 16 + 1;
+        pPos[i * 3 + 2] = (Math.random() - 0.5) * 70;
+      }
+      const pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      particles = new THREE.Points(
+        pGeo,
+        new THREE.PointsMaterial({
+          color: 0xa8c4e0,
+          size: 0.08,
+          transparent: true,
+          opacity: 0.26,
+          depthWrite: false,
+          sizeAttenuation: true,
+        })
+      );
+      scene.add(particles);
+    }
+
+    const islandGroups = [];
+    const pickRoots = [];
+    let treasure = null;
+    for (const cfg of ISLANDS) {
+      const g = buildIsland(cfg);
+      scene.add(g);
+      islandGroups.push(g);
+      pickRoots.push(g);
+      if (cfg.id === 'mep') treasure = makeTreasure(g);
+    }
+
+    // --- UI ---
+    const popupEl = document.getElementById('popup');
+    const titleEl = document.getElementById('popup-title');
+    const bodyEl = document.getElementById('popup-body');
+    const closeBtn = popupEl.querySelector('.close');
+    const dock = document.getElementById('dock');
+    const perfEl = document.getElementById('perf');
+    const islandById = Object.fromEntries(ISLANDS.map((d) => [d.id, d]));
+
+    function setActiveButton(id) {
+      const buttons = dock.querySelectorAll('button');
+      for (let i = 0; i < buttons.length; i++) {
+        buttons[i].classList.toggle('active', buttons[i].dataset.id === id);
+      }
+    }
+
+    function showIslandPopup(id, extra) {
+      const c = islandById[id];
+      if (!c) return;
+      titleEl.textContent = c.name;
+      bodyEl.textContent = extra ? `${extra}——${c.body}` : c.body;
+      popupEl.style.setProperty('--accent', c.accent);
+      popupEl.classList.add('open');
+      setActiveButton(id);
+    }
+
+    function hidePopup() {
+      popupEl.classList.remove('open');
+    }
+
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hidePopup();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hidePopup();
+    });
+
+    const overviewBtn = document.createElement('button');
+    overviewBtn.type = 'button';
+    overviewBtn.dataset.id = 'overview';
+    overviewBtn.textContent = '總覽';
+    overviewBtn.addEventListener('click', () => flyTo('overview'));
+    dock.appendChild(overviewBtn);
+    for (const cfg of ISLANDS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.id = cfg.id;
+      btn.textContent = cfg.name;
+      btn.style.setProperty('--accent', cfg.accent);
+      btn.addEventListener('click', () => {
+        flyTo(cfg.id);
+        showIslandPopup(cfg.id);
+      });
+      dock.appendChild(btn);
+    }
+    setActiveButton('overview');
+
+    // --- Camera tween (preallocated) ---
+    const flyStartPos = new THREE.Vector3();
+    const flyEndPos = new THREE.Vector3();
+    const flyStartTarget = new THREE.Vector3();
+    const flyEndTarget = new THREE.Vector3();
+    const FLY_OFFSET = new THREE.Vector3(7.5, 5.4, 8.6);
+    let flying = false;
+    let flyT = 0;
+    const FLY_DUR = 1.25;
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function flyTo(id) {
+      flyStartPos.copy(camera.position);
+      flyStartTarget.copy(controls.target);
+      if (id === 'overview') {
+        flyEndPos.copy(OVERVIEW_POS);
+        flyEndTarget.copy(OVERVIEW_TARGET);
+        setActiveButton('overview');
+      } else {
+        const cfg = islandById[id];
+        if (!cfg) return;
+        flyEndTarget.set(cfg.x, 1.2, cfg.z);
+        flyEndPos.set(cfg.x + FLY_OFFSET.x, 1.2 + FLY_OFFSET.y, cfg.z + FLY_OFFSET.z);
+        setActiveButton(id);
+      }
+      flyT = 0;
+      flying = true;
+      controls.enabled = false;
+    }
+
+    // --- Raycasting ---
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDown = null;
+
+    function setPointer(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      const src = event.changedTouches && event.changedTouches[0]
+        ? event.changedTouches[0]
+        : event;
+      const cx = src.clientX;
+      const cy = src.clientY;
+      if (cx == null) return false;
+      pointer.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((cy - rect.top) / rect.height) * 2 + 1;
+      return true;
+    }
+
+    function hitIsland() {
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(pickRoots, true);
+      for (const h of hits) {
+        let o = h.object;
+        while (o) {
+          if (o.userData && o.userData.islandId) return o.userData.islandId;
+          o = o.parent;
+        }
+      }
+      return null;
+    }
+
+    function onPointerDown(e) {
+      if (!setPointer(e)) return;
+      pointerDown = { x: pointer.x, y: pointer.y, t: performance.now() };
+    }
+
+    function onPointerUp(e) {
+      if (!pointerDown) return;
+      if (!setPointer(e)) {
+        pointerDown = null;
+        return;
+      }
+      const dx = pointer.x - pointerDown.x;
+      const dy = pointer.y - pointerDown.y;
+      const moved = Math.hypot(dx, dy) > 0.02;
+      const quick = performance.now() - pointerDown.t < 450;
+      pointerDown = null;
+      if (moved || !quick) return;
+      const id = hitIsland();
+      if (id) showIslandPopup(id);
+      else hidePopup();
+    }
+
+    renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: true });
+    renderer.domElement.addEventListener('pointerup', onPointerUp, { passive: true });
+
+    function onResize() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', onResize, { passive: true });
+
+    // --- Animate ---
+    const clock = new THREE.Clock();
+    const perfEvery = 30;
+    let frame = 0;
+    let lastDrawCalls = 0;
+    let ready = false;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.elapsedTime;
+
+      for (let i = 0; i < islandGroups.length; i++) {
+        const g = islandGroups[i];
+        const ph = ISLANDS[i].phase;
+        g.position.y = Math.sin(t * 0.55 + ph) * 0.38;
+        g.rotation.y = Math.sin(t * 0.12 + ph) * 0.025;
+      }
+
+      if (flying) {
+        flyT += dt / FLY_DUR;
+        const k = easeInOutCubic(Math.min(flyT, 1));
+        camera.position.lerpVectors(flyStartPos, flyEndPos, k);
+        controls.target.lerpVectors(flyStartTarget, flyEndTarget, k);
+        if (flyT >= 1) {
+          camera.position.copy(flyEndPos);
+          controls.target.copy(flyEndTarget);
+          flying = false;
+          controls.enabled = true;
+        }
+      }
+
+      stars.rotation.y = t * 0.008;
+      stars.material.opacity = 0.72 + Math.sin(t * 1.4) * 0.1 + Math.sin(t * 2.7) * 0.06;
+      sky.rotation.y = t * 0.003;
+
+      if (particles) {
+        particles.rotation.y = t * 0.01;
+      }
+
+      if (treasure) {
+        const pulse = 0.35 + Math.sin(t * 2.2) * 0.2;
+        goldMat.emissiveIntensity = 0.4 + pulse * 0.4;
+        goldCoreMat.emissiveIntensity = 0.3 + pulse * 0.3;
+        treasure.rotation.z = 0.25 + Math.sin(t * 0.9) * 0.08;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+
+      frame++;
+      if (frame === 1 || frame % perfEvery === 0) {
+        lastDrawCalls = renderer.info.render.calls;
+        perfEl.textContent = 'draws: ' + lastDrawCalls;
+        ready = true;
+      }
+    }
+    animate();
+
+    window.__BIM_ISLANDS = {
+      get ready() { return ready; },
+      flyTo,
+      hidePopup,
+      showIslandPopup,
+      getDrawCalls() { return lastDrawCalls || renderer.info.render.calls; },
+      names: ISLANDS.map((d) => d.name),
+      ids: ISLANDS.map((d) => d.id),
+    };
+  </script>
+</body>
+</html>
