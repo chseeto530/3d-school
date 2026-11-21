@@ -225,6 +225,32 @@
       }
       #quiz, #done { top: 156px; }
     }
+    #boss {
+      position: fixed;
+      top: 56px;
+      left: 168px;
+      right: 156px;
+      z-index: 17;
+      display: none;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(12, 22, 40, 0.92);
+      border: 1px solid rgba(255, 214, 90, 0.5);
+      color: #fff6dc;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      pointer-events: none;
+    }
+    #boss.show { display: block; }
+    @media (max-width: 840px) {
+      #boss {
+        top: 108px;
+        left: 8px;
+        right: 8px;
+      }
+    }
     #flash {
       position: fixed;
       inset: 0;
@@ -235,7 +261,7 @@
     }
     #flash.show { box-shadow: inset 0 0 90px 28px rgba(255, 32, 54, 0.62); }
   </style>
-  <script>console.info('isl6');</script>
+  <script>console.info('isl7');</script>
 </head>
 <body>
   <div id="view"></div>
@@ -246,6 +272,7 @@
   </header>
   <div id="minimap-wrap" aria-hidden="true"><canvas id="minimap" width="256" height="256"></canvas></div>
   <p id="hint">WASD 或左下搖桿移動，拖曳畫面轉向。走到解鎖島上的 BIM 藍圖。</p>
+  <div id="boss" role="status"></div>
   <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
   <div id="flash"></div>
   <div id="warn" role="alert">答錯了，請再試一次</div>
@@ -885,6 +912,39 @@
   flightPole.visible = false;
   scene.add(flightPole);
 
+  const pipeGeo = new THREE.CylinderGeometry(1, 1, 1, 6);
+  const pipeMat = {
+    water: new THREE.MeshLambertMaterial({ color: 0x3aa0ff, emissive: 0x0d3f86 }),
+    air: new THREE.MeshLambertMaterial({ color: 0xffd15c, emissive: 0x8a6410 }),
+    elec: new THREE.MeshLambertMaterial({ color: 0xff4d4d, emissive: 0x8c1616 }),
+  };
+  const bossGroup = new THREE.Group();
+  const BOSS_PIPES = [
+    ['water', 0.1, 1.32, 10.7, 3.1, 0.18, 'x', 0],
+    ['air', 0.1, 1.32, 10.7, 1.55, 0.28, 'z', 1],
+    ['air', -0.05, 2.42, 10.15, 2.5, 0.22, 'x', 0],
+    ['elec', -0.62, 2.42, 10.15, 1.55, 0.14, 'y', 1],
+    ['elec', 1.2, 1.55, 9.55, 1.45, 0.12, 'z', 0],
+    ['water', 1.2, 1.55, 9.55, 1.55, 0.22, 'x', 1],
+    ['water', -1.2, 1.5, 9.25, 1.55, 0.15, 'y', 0],
+    ['air', -1.2, 1.5, 9.25, 1.4, 0.24, 'x', 1],
+    ['elec', 0.95, 2.85, 11.35, 1.35, 0.16, 'x', 0],
+    ['water', 1.35, 0.78, 11.05, 1.25, 0.14, 'z', 0],
+  ];
+  for (let i = 0; i < BOSS_PIPES.length; i++) {
+    const spec = BOSS_PIPES[i];
+    const mesh = new THREE.Mesh(pipeGeo, pipeMat[spec[0]]);
+    mesh.scale.set(spec[5], spec[4], spec[5]);
+    if (spec[6] === 'x') mesh.rotation.z = Math.PI / 2;
+    else if (spec[6] === 'z') mesh.rotation.x = Math.PI / 2;
+    mesh.position.set(spec[1], spec[2], spec[3]);
+    mesh.userData.clash = spec[7] === 1;
+    mesh.userData.alive = true;
+    bossGroup.add(mesh);
+  }
+  bossGroup.visible = false;
+  scene.add(bossGroup);
+
   function addBox(group, mat, w, h, d, x, y, z) {
     const m = new THREE.Mesh(unitBox, mat);
     m.scale.set(w, h, d);
@@ -975,6 +1035,15 @@
   let solvedN = 0;
   let quizOpen = false;
   let pendingDone = false;
+  let bossOn = false;
+  let bossDone = false;
+  let bossHits = 0;
+  const bossEl = document.getElementById('boss');
+  const BOSS_APPEAR = '主島出現哂一個混亂的 BIM Boss！根據提示，點擊錯誤、互相碰撞的管線。';
+  const BOSS_HINT = '碰撞檢測：找出互相穿越或重疊的管線。';
+  const BOSS_HIT = '發現一個碰撞點！';
+  const BOSS_MISS = '呢條管冇碰撞，再睇清楚。';
+  const BOSS_WIN = '你用碰撞檢測擊敗哂 BIM Boss！';
   let doneShown = false;
   let nearBlueprint = false;
   let time = 0;
@@ -1022,7 +1091,9 @@
   }
   function updateHud() {
     hudCount.textContent = '已組裝 ' + solvedN + '/10';
-    if (solvedN >= 10) hudNext.textContent = '主島組合完成';
+    if (bossDone) hudNext.textContent = 'Boss 已擊敗';
+    else if (bossOn) hudNext.textContent = 'BIM Boss';
+    else if (solvedN >= 10) hudNext.textContent = '主島組合完成';
     else hudNext.textContent = '島 ' + (active + 1) + ' · ' + QUIZ[active].name;
   }
   function setHint(s) {
@@ -1035,10 +1106,53 @@
     state = s;
     document.body.dataset.isl = s;
   }
-  function showDone() {
-    if (doneShown) return;
-    doneShown = true;
-    doneEl.classList.add('open');
+  function showBossMsg(text) {
+    bossEl.textContent = text;
+    bossEl.classList.add('show');
+  }
+  function frameBoss() {
+    wantX = 0.1;
+    wantY = 3.35;
+    wantZ = 16.5;
+    wantLX = 0.1;
+    wantLY = 1.45;
+    wantLZ = 10.5;
+  }
+  function beginBoss() {
+    if (bossOn) return;
+    bossOn = true;
+    bossDone = false;
+    bossHits = 0;
+    boy.position.set(0.1, 0, 18.2);
+    boy.rotation.y = Math.PI;
+    yaw = 0;
+    pitch = 0.46;
+    bossGroup.visible = true;
+    showBossMsg(BOSS_APPEAR);
+    document.body.dataset.boss = 'on';
+    document.body.dataset.bossHits = '0';
+    frameBoss();
+    updateHud();
+  }
+  function skipToBoss() {
+    for (let i = 0; i < 10; i++) {
+      ISLANDS[i].unlocked = true;
+      ISLANDS[i].solved = true;
+      if (shields[i]) shields[i].visible = false;
+      parts[i].visible = true;
+      parts[i].position.set(DOCK[i][0], DOCK[i][1], DOCK[i][2]);
+      parts[i].scale.set(1, 1, 1);
+      parts[i].rotation.set(0, 0, 0);
+      bridges[i].visible = true;
+      bridges[i].userData.g = 1;
+      bridges[i].scale.z = 1;
+    }
+    solvedN = 10;
+    blueprint.visible = false;
+    arrow.visible = false;
+    active = -1;
+    pendingDone = true;
+    beginBoss();
   }
   let aimIsland = -1;
   function startCine(from, next) {
@@ -1148,6 +1262,9 @@
   computeFollow();
   camera.position.set(wantX, wantY, wantZ);
   camera.lookAt(wantLX, wantLY, wantLZ);
+  try {
+    if (sessionStorage.getItem('isl7-boss-preview') === '1') skipToBoss();
+  } catch (err) { /* storage unavailable */ }
 
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
@@ -1217,8 +1334,40 @@
     ptrX = e.clientX;
     ptrY = e.clientY;
   }, { passive: true });
+  function onBossTap() {
+    if (!bossOn || bossDone || cineT > 0) return false;
+    const hits = raycaster.intersectObject(bossGroup, true);
+    if (!hits.length) return true;
+    const mesh = hits[0].object;
+    if (mesh.userData.clash && mesh.userData.alive) {
+      mesh.userData.alive = false;
+      mesh.visible = false;
+      bossHits += 1;
+      document.body.dataset.bossHits = String(bossHits);
+      if (bossHits >= 4) {
+        bossDone = true;
+        document.body.dataset.boss = 'win';
+        showBossMsg(BOSS_WIN);
+        updateHud();
+      } else {
+        showBossMsg(BOSS_HIT);
+      }
+    } else if (!mesh.userData.clash) {
+      showBossMsg(BOSS_MISS);
+      shakeT = 0.64;
+    }
+    return true;
+  }
   function onTap(ev) {
-    if (quizOpen || cineT > 0 || !blueprint.visible || active < 0) return;
+    if (quizOpen || cineT > 0) return;
+    pointer.x = (ev.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(ev.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    if (bossOn) {
+      onBossTap();
+      return;
+    }
+    if (!blueprint.visible || active < 0) return;
     const dx = boy.position.x - blueprint.position.x;
     const dz = boy.position.z - blueprint.position.z;
     if (dx * dx + dz * dz > NEAR2) return;
@@ -1446,8 +1595,10 @@
           boy.rotation.y = Math.atan2(isl.x - boy.position.x, isl.z - boy.position.z);
           aimIsland = -1;
         }
-        if (pendingDone && tweens.length === 0) showDone();
+        if (pendingDone && tweens.length === 0) beginBoss();
       }
+    } else if (bossOn && !bossDone) {
+      frameBoss();
     } else {
       computeFollow();
     }
@@ -1467,7 +1618,9 @@
     }
 
     let nextHint;
-    if (doneShown && doneEl.classList.contains('open')) nextHint = '十件構件已在主島組裝完成';
+    if (bossDone) nextHint = BOSS_WIN;
+    else if (bossOn) nextHint = BOSS_HINT;
+    else if (doneShown && doneEl.classList.contains('open')) nextHint = '十件構件已在主島組裝完成';
     else if (cineT > 0) nextHint = pendingDone ? '最後一件構件飛往主島' : '構件飛往主島，黃色箭嘴指向下一座島';
     else if (quizOpen) nextHint = '選擇一個答案';
     else if (nearBlueprint) nextHint = '點擊發光的 BIM 藍圖';
@@ -1475,7 +1628,9 @@
     setHint(nextHint);
 
     let st = 'play';
-    if (doneEl.classList.contains('open')) st = 'done';
+    if (bossDone) st = 'victory';
+    else if (bossOn) st = 'boss';
+    else if (doneEl.classList.contains('open')) st = 'done';
     else if (cineT > 0) st = 'cine';
     else if (quizOpen) st = 'quiz';
     else if (nearBlueprint) st = 'near';
